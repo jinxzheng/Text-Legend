@@ -1162,7 +1162,7 @@ function isAlipayConfigured() {
 
 function buildAlipaySignContent(params) {
   return Object.keys(params)
-    .filter((key) => key !== 'sign' && key !== 'sign_type' && params[key] !== undefined && params[key] !== null && String(params[key]) !== '')
+    .filter((key) => key !== 'sign' && params[key] !== undefined && params[key] !== null && String(params[key]) !== '')
     .sort()
     .map((key) => `${key}=${params[key]}`)
     .join('&');
