@@ -3031,6 +3031,7 @@ async function login() {
       await refreshVipClaimLimitStatus();
       await loadSmtpSettings();
       await loadSvipSettings();
+      await loadAlipaySettings();
       await loadFirstRechargeSettings();
       await loadInviteRewardSettings();
       await refreshStateThrottleStatus();
@@ -4012,9 +4013,9 @@ async function saveAlipaySettings() {
   setAlipayMsg('');
   try {
     const data = await api('/admin/alipay-settings/update', 'POST', { settings });
-    applyAlipaySettingsToForm(data?.settings || settings);
+    const fresh = await api('/admin/alipay-settings', 'GET');
+    applyAlipaySettingsToForm(fresh?.settings || data?.settings || settings);
     setAlipayMsg('支付宝配置保存成功', 'green');
-    setTimeout(() => setAlipayMsg(''), 1500);
   } catch (err) {
     setAlipayMsg(`保存失败: ${err.message}`, 'red');
   }
@@ -7819,6 +7820,7 @@ async function initDashboard() {
       refreshVipClaimLimitStatus();
       loadSmtpSettings();
       loadSvipSettings();
+      loadAlipaySettings();
       refreshStateThrottleStatus();
     refreshRoomVariantStatus();
       loadCmdRateSettings();
