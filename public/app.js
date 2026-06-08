@@ -2837,6 +2837,83 @@ function noticeModal({ title, text, buttonText = '知道了' }) {
   });
 }
 
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function openAlipayQrModal(order) {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(order.qrCode || '')}`;
+  modal.innerHTML = `
+    <div class="modal-card">
+      <div class="modal-title">支付宝扫码充值</div>
+      <div class="modal-text">订单 ${order.outTradeNo}<br>${order.amountYuan} 元 = ${order.yuanbao} 元宝</div>
+      <div style="display:flex;justify-content:center;margin:12px 0;">
+        <img alt="支付宝充值二维码" src="${qrImageUrl}" style="width:240px;height:240px;background:#fff;padding:8px;border-radius:4px;">
+      </div>
+      <div class="modal-text" data-alipay-status>等待支付...</div>
+      <div class="modal-actions">
+        <button type="button" data-alipay-close>关闭</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  const close = () => modal.remove();
+  modal.querySelector('[data-alipay-close]')?.addEventListener('click', close);
+  modal.addEventListener('click', (evt) => {
+    if (evt.target === modal) close();
+  });
+  return {
+    modal,
+    setStatus(text) {
+      const el = modal.querySelector('[data-alipay-status]');
+      if (el) el.textContent = text;
+    },
+    close
+  };
+}
+
+async function startAlipayRecharge() {
+  if (!token || !activeChar) {
+    showToast('请先进入角色');
+    return;
+  }
+  const cfg = await apiGet('/api/recharge/alipay/config');
+  if (!cfg.enabled) {
+    await noticeModal({ title: '支付宝充值', text: '支付宝当面付未启用。' });
+    return;
+  }
+  const amount = await promptModal({
+    title: '支付宝扫码充值',
+    text: `请输入充值金额（${cfg.minAmountYuan}-${cfg.maxAmountYuan} 元，1元=${cfg.yuanbaoPerYuan}元宝）`,
+    placeholder: '充值金额',
+    type: 'number'
+  });
+  if (!amount) return;
+  const order = await apiPost('/api/recharge/alipay/create', {
+    token,
+    characterName: activeChar,
+    realmId: currentRealmId,
+    amountYuan: amount
+  });
+  const qrModal = openAlipayQrModal(order);
+  for (let i = 0; i < 90; i += 1) {
+    await wait(2000);
+    if (!document.body.contains(qrModal.modal)) return;
+    const status = await apiGet(`/api/recharge/alipay/status?outTradeNo=${encodeURIComponent(order.outTradeNo)}`, true);
+    if (status.status === 'credited') {
+      qrModal.setStatus('充值已到账。');
+      showToast('充值已到账');
+      return;
+    }
+    if (status.status === 'paid') {
+      qrModal.setStatus('支付成功，正在到账...');
+    }
+  }
+  qrModal.setStatus('仍未到账，请稍后重新打开充值状态或联系管理员。');
+}
+
 function inferImportantNoticeTitle(text = '') {
   const msg = String(text || '');
   if (!msg) return '';
@@ -11880,8 +11957,17 @@ if (ui.recharge) {
     const code = await promptModal({
       title: '元宝充值',
       text: '请输入卡密（首次充值可获得首充福利）',
-      placeholder: '卡密'
+      placeholder: '卡密',
+      extra: { text: '支付宝扫码' }
     });
+    if (code === '__extra__') {
+      try {
+        await startAlipayRecharge();
+      } catch (err) {
+        await noticeModal({ title: '支付宝充值', text: err?.message || '创建支付宝订单失败。' });
+      }
+      return;
+    }
     if (!code) return;
     socket.emit('cmd', { text: `recharge ${code}` });
   });

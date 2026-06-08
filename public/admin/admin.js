@@ -28,6 +28,18 @@ const rechargeCodesTableContainer = document.getElementById('recharge-codes-tabl
 const rechargeCodesPrev = document.getElementById('recharge-codes-prev');
 const rechargeCodesNext = document.getElementById('recharge-codes-next');
 const rechargeCodesPage = document.getElementById('recharge-codes-page');
+const alipayEnabledInput = document.getElementById('alipay-enabled');
+const alipayAppIdInput = document.getElementById('alipay-app-id');
+const alipayGatewayInput = document.getElementById('alipay-gateway');
+const alipayNotifyUrlInput = document.getElementById('alipay-notify-url');
+const alipayYuanbaoPerYuanInput = document.getElementById('alipay-yuanbao-per-yuan');
+const alipayMinAmountYuanInput = document.getElementById('alipay-min-amount-yuan');
+const alipayMaxAmountYuanInput = document.getElementById('alipay-max-amount-yuan');
+const alipayPrivateKeyInput = document.getElementById('alipay-private-key');
+const alipayPublicKeyInput = document.getElementById('alipay-public-key');
+const alipayLoadBtn = document.getElementById('alipay-load-btn');
+const alipaySaveBtn = document.getElementById('alipay-save-btn');
+const alipayMsg = document.getElementById('alipay-msg');
 const firstRechargeEnabledInput = document.getElementById('first-recharge-enabled');
 const firstRechargeGrantDivineBeastInput = document.getElementById('first-recharge-grant-divine-beast');
 const firstRechargeYuanbaoInput = document.getElementById('first-recharge-yuanbao');
@@ -3949,6 +3961,62 @@ async function listRechargeCodes() {
     });
   } catch (err) {
     rechargeCodesResult.textContent = err.message;
+  }
+}
+
+function setAlipayMsg(text, color = '') {
+  if (!alipayMsg) return;
+  alipayMsg.textContent = text || '';
+  if (color) alipayMsg.style.color = color;
+}
+
+function applyAlipaySettingsToForm(settings) {
+  const s = settings || {};
+  if (alipayEnabledInput) alipayEnabledInput.checked = s.enabled === true;
+  if (alipayAppIdInput) alipayAppIdInput.value = s.appId || '';
+  if (alipayGatewayInput) alipayGatewayInput.value = s.gateway || 'https://openapi.alipay.com/gateway.do';
+  if (alipayNotifyUrlInput) alipayNotifyUrlInput.value = s.notifyUrl || '';
+  if (alipayYuanbaoPerYuanInput) alipayYuanbaoPerYuanInput.value = Math.max(1, Math.floor(Number(s.yuanbaoPerYuan || 100)));
+  if (alipayMinAmountYuanInput) alipayMinAmountYuanInput.value = Math.max(0.01, Number(s.minAmountYuan || 1));
+  if (alipayMaxAmountYuanInput) alipayMaxAmountYuanInput.value = Math.max(0.01, Number(s.maxAmountYuan || 5000));
+  if (alipayPrivateKeyInput) alipayPrivateKeyInput.value = s.privateKey || '';
+  if (alipayPublicKeyInput) alipayPublicKeyInput.value = s.publicKey || '';
+}
+
+async function loadAlipaySettings() {
+  if (!alipayMsg) return;
+  setAlipayMsg('');
+  try {
+    const data = await api('/admin/alipay-settings', 'GET');
+    applyAlipaySettingsToForm(data?.settings || {});
+    setAlipayMsg('支付宝配置加载成功', 'green');
+    setTimeout(() => setAlipayMsg(''), 1500);
+  } catch (err) {
+    setAlipayMsg(`加载失败: ${err.message}`, 'red');
+  }
+}
+
+async function saveAlipaySettings() {
+  if (!alipayMsg) return;
+  const settings = {
+    enabled: !!alipayEnabledInput?.checked,
+    appId: String(alipayAppIdInput?.value || '').trim(),
+    gateway: String(alipayGatewayInput?.value || '').trim(),
+    notifyUrl: String(alipayNotifyUrlInput?.value || '').trim(),
+    yuanbaoPerYuan: Math.max(1, Math.floor(Number(alipayYuanbaoPerYuanInput?.value || 100) || 100)),
+    minAmountYuan: Math.max(0.01, Number(alipayMinAmountYuanInput?.value || 1) || 1),
+    maxAmountYuan: Math.max(0.01, Number(alipayMaxAmountYuanInput?.value || 5000) || 5000),
+    privateKey: String(alipayPrivateKeyInput?.value || '').trim(),
+    publicKey: String(alipayPublicKeyInput?.value || '').trim()
+  };
+  setAlipayMsg('');
+  try {
+    const data = await api('/admin/alipay-settings/update', 'POST', { settings });
+    applyAlipaySettingsToForm(data?.settings || settings);
+    setAlipayMsg('支付宝配置保存成功', 'green');
+    setTimeout(() => setAlipayMsg(''), 1500);
+  } catch (err) {
+    setAlipayMsg(`保存失败: ${err.message}`, 'red');
   }
 }
 
@@ -8248,6 +8316,8 @@ document.getElementById('vip-create-btn').addEventListener('click', createVipCod
 document.getElementById('vip-list-btn').addEventListener('click', listVipCodes);
 document.getElementById('recharge-create-btn').addEventListener('click', createRechargeCodes);
 document.getElementById('recharge-list-btn').addEventListener('click', listRechargeCodes);
+if (alipayLoadBtn) alipayLoadBtn.addEventListener('click', loadAlipaySettings);
+if (alipaySaveBtn) alipaySaveBtn.addEventListener('click', saveAlipaySettings);
 if (firstRechargeLoadBtn) firstRechargeLoadBtn.addEventListener('click', loadFirstRechargeSettings);
 if (firstRechargeSaveBtn) firstRechargeSaveBtn.addEventListener('click', saveFirstRechargeSettings);
 if (firstRechargeReissueBtn) firstRechargeReissueBtn.addEventListener('click', reissueFirstRechargeWelfare);

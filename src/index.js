@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import path from 'node:path';
@@ -67,8 +67,8 @@ import { getGuildBuildingInfo, addGuildBuildingContribution, buildGuildBuildingP
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, countVipCodes, useVipCode } from './db/vip.js';
-import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard, listUsedRechargeCharacters } from './db/recharge.js';
-import { getSetting, setSetting, loadSettingsCache, reloadSettingsCache, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getVipClaimLimitEnabled, setVipClaimLimitEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getCacheMonsterHealthEnabled, setCacheMonsterHealthEnabled, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingFruitDropEnabled as getTrainingFruitDropEnabledDb, setTrainingFruitDropEnabled as setTrainingFruitDropEnabledDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getPetTrainingFruitDropEnabled as getPetTrainingFruitDropEnabledDb, setPetTrainingFruitDropEnabled as setPetTrainingFruitDropEnabledDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns, getUltimateGrowthConfig as getUltimateGrowthConfigDb, setUltimateGrowthConfig as setUltimateGrowthConfigDb, getPlayerSaveDebounceMs, setPlayerSaveDebounceMs, getPlayerSaveMinIntervalMs as getPlayerSaveMinIntervalMsDb, setPlayerSaveMinIntervalMs, getPlayerSaveManagedMinIntervalMs, setPlayerSaveManagedMinIntervalMs, getPlayerSaveManagedForceIntervalMs, setPlayerSaveManagedForceIntervalMs, getPlayerSaveDetachedMinIntervalMs, setPlayerSaveDetachedMinIntervalMs, getPlayerSaveForceDeadlineMs, setPlayerSaveForceDeadlineMs, getPlayerSaveMaxWritesPerFlush, setPlayerSaveMaxWritesPerFlush, getPlayerSaveForceFullEnabled, setPlayerSaveForceFullEnabled } from './db/settings.js';
+import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard, listUsedRechargeCharacters, createAlipayRechargeOrder, getAlipayRechargeOrder, markAlipayRechargeOrderCreated, markAlipayRechargeOrderPaid, markAlipayRechargeOrderCredited } from './db/recharge.js';
+import { getSetting, getSettingSync, setSetting, loadSettingsCache, reloadSettingsCache, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getVipClaimLimitEnabled, setVipClaimLimitEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getCacheMonsterHealthEnabled, setCacheMonsterHealthEnabled, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingFruitDropEnabled as getTrainingFruitDropEnabledDb, setTrainingFruitDropEnabled as setTrainingFruitDropEnabledDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getPetTrainingFruitDropEnabled as getPetTrainingFruitDropEnabledDb, setPetTrainingFruitDropEnabled as setPetTrainingFruitDropEnabledDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns, getUltimateGrowthConfig as getUltimateGrowthConfigDb, setUltimateGrowthConfig as setUltimateGrowthConfigDb, getPlayerSaveDebounceMs, setPlayerSaveDebounceMs, getPlayerSaveMinIntervalMs as getPlayerSaveMinIntervalMsDb, setPlayerSaveMinIntervalMs, getPlayerSaveManagedMinIntervalMs, setPlayerSaveManagedMinIntervalMs, getPlayerSaveManagedForceIntervalMs, setPlayerSaveManagedForceIntervalMs, getPlayerSaveDetachedMinIntervalMs, setPlayerSaveDetachedMinIntervalMs, getPlayerSaveForceDeadlineMs, setPlayerSaveForceDeadlineMs, getPlayerSaveMaxWritesPerFlush, setPlayerSaveMaxWritesPerFlush, getPlayerSaveForceFullEnabled, setPlayerSaveForceFullEnabled } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawnsPage,
@@ -1053,6 +1053,7 @@ if (ADMIN_BASE !== '/admin') {
   });
 }
 app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: false, limit: '2mb' }));
 app.use((req, res, next) => {
   const startedAt = Date.now();
   const requestId = crypto.randomUUID().slice(0, 8);
@@ -1070,6 +1071,162 @@ app.use((req, res, next) => {
   });
   next();
 });
+
+function normalizePemKey(rawKey, type) {
+  const value = String(rawKey || '').replace(/\\n/g, '\n').trim();
+  if (!value) return '';
+  if (value.includes('-----BEGIN')) return value;
+  const label = type === 'public' ? 'PUBLIC KEY' : 'PRIVATE KEY';
+  const body = value.replace(/\s+/g, '').match(/.{1,64}/g)?.join('\n') || value;
+  return `-----BEGIN ${label}-----\n${body}\n-----END ${label}-----`;
+}
+
+function normalizeAlipaySettings(source = {}) {
+  const minAmountYuan = Math.max(0.01, Number(source.minAmountYuan ?? config.alipay.minAmountYuan ?? 1) || 1);
+  const maxAmountYuan = Math.max(minAmountYuan, Number(source.maxAmountYuan ?? config.alipay.maxAmountYuan ?? 5000) || 5000);
+  return {
+    enabled: source.enabled === true || source.enabled === 'true' || source.enabled === '1',
+    appId: String(source.appId ?? config.alipay.appId ?? '').trim(),
+    gateway: String(source.gateway ?? config.alipay.gateway ?? 'https://openapi.alipay.com/gateway.do').trim(),
+    privateKey: String(source.privateKey ?? config.alipay.privateKey ?? '').replace(/\\n/g, '\n').trim(),
+    publicKey: String(source.publicKey ?? config.alipay.publicKey ?? '').replace(/\\n/g, '\n').trim(),
+    notifyUrl: String(source.notifyUrl ?? config.alipay.notifyUrl ?? '').trim(),
+    yuanbaoPerYuan: Math.max(1, Math.floor(Number(source.yuanbaoPerYuan ?? config.alipay.yuanbaoPerYuan ?? 100) || 100)),
+    minAmountYuan,
+    maxAmountYuan
+  };
+}
+
+function getAlipaySettingsSnapshot() {
+  return normalizeAlipaySettings({
+    enabled: getSettingSync('alipay_enabled', String(config.alipay.enabled)),
+    appId: getSettingSync('alipay_app_id', config.alipay.appId),
+    gateway: getSettingSync('alipay_gateway', config.alipay.gateway),
+    privateKey: getSettingSync('alipay_private_key', config.alipay.privateKey),
+    publicKey: getSettingSync('alipay_public_key', config.alipay.publicKey),
+    notifyUrl: getSettingSync('alipay_notify_url', config.alipay.notifyUrl),
+    yuanbaoPerYuan: getSettingSync('alipay_yuanbao_per_yuan', String(config.alipay.yuanbaoPerYuan)),
+    minAmountYuan: getSettingSync('alipay_min_amount_yuan', String(config.alipay.minAmountYuan)),
+    maxAmountYuan: getSettingSync('alipay_max_amount_yuan', String(config.alipay.maxAmountYuan))
+  });
+}
+
+async function getAlipaySettingsForAdmin() {
+  return normalizeAlipaySettings({
+    enabled: await getSetting('alipay_enabled', String(config.alipay.enabled)),
+    appId: await getSetting('alipay_app_id', config.alipay.appId),
+    gateway: await getSetting('alipay_gateway', config.alipay.gateway),
+    privateKey: await getSetting('alipay_private_key', config.alipay.privateKey),
+    publicKey: await getSetting('alipay_public_key', config.alipay.publicKey),
+    notifyUrl: await getSetting('alipay_notify_url', config.alipay.notifyUrl),
+    yuanbaoPerYuan: await getSetting('alipay_yuanbao_per_yuan', String(config.alipay.yuanbaoPerYuan)),
+    minAmountYuan: await getSetting('alipay_min_amount_yuan', String(config.alipay.minAmountYuan)),
+    maxAmountYuan: await getSetting('alipay_max_amount_yuan', String(config.alipay.maxAmountYuan))
+  });
+}
+
+async function saveAlipaySettingsForAdmin(settings) {
+  const normalized = normalizeAlipaySettings(settings || {});
+  await setSetting('alipay_enabled', normalized.enabled ? 'true' : 'false');
+  await setSetting('alipay_app_id', normalized.appId);
+  await setSetting('alipay_gateway', normalized.gateway);
+  await setSetting('alipay_private_key', normalized.privateKey);
+  await setSetting('alipay_public_key', normalized.publicKey);
+  await setSetting('alipay_notify_url', normalized.notifyUrl);
+  await setSetting('alipay_yuanbao_per_yuan', String(normalized.yuanbaoPerYuan));
+  await setSetting('alipay_min_amount_yuan', String(normalized.minAmountYuan));
+  await setSetting('alipay_max_amount_yuan', String(normalized.maxAmountYuan));
+  return normalized;
+}
+
+function isAlipayConfigured() {
+  const alipay = getAlipaySettingsSnapshot();
+  return Boolean(alipay.enabled && alipay.appId && alipay.privateKey && alipay.publicKey);
+}
+
+function buildAlipaySignContent(params) {
+  return Object.keys(params)
+    .filter((key) => key !== 'sign' && key !== 'sign_type' && params[key] !== undefined && params[key] !== null && String(params[key]) !== '')
+    .sort()
+    .map((key) => `${key}=${params[key]}`)
+    .join('&');
+}
+
+function signAlipayParams(params) {
+  const alipay = getAlipaySettingsSnapshot();
+  const signer = crypto.createSign('RSA-SHA256');
+  signer.update(buildAlipaySignContent(params), 'utf8');
+  signer.end();
+  return signer.sign(normalizePemKey(alipay.privateKey, 'private'), 'base64');
+}
+
+function verifyAlipayNotify(params) {
+  if (!isAlipayConfigured()) return false;
+  const sign = String(params?.sign || '');
+  if (!sign) return false;
+  const alipay = getAlipaySettingsSnapshot();
+  const verifier = crypto.createVerify('RSA-SHA256');
+  verifier.update(buildAlipaySignContent(params), 'utf8');
+  verifier.end();
+  return verifier.verify(normalizePemKey(alipay.publicKey, 'public'), sign, 'base64');
+}
+
+function getAlipayNotifyUrl(req) {
+  const alipay = getAlipaySettingsSnapshot();
+  if (alipay.notifyUrl) return alipay.notifyUrl;
+  return `${getPublicBaseUrl(req)}/api/recharge/alipay/notify`;
+}
+
+function buildAlipayOutTradeNo(userId) {
+  const uid = Math.max(1, Math.floor(Number(userId) || 0));
+  return `YB${Date.now()}${uid}${crypto.randomBytes(4).toString('hex').toUpperCase()}`.slice(0, 64);
+}
+
+async function callAlipay(method, bizContent, req = null) {
+  const alipay = getAlipaySettingsSnapshot();
+  if (!isAlipayConfigured()) throw new Error('支付宝当面付未启用或配置不完整。');
+  const params = {
+    app_id: alipay.appId,
+    method,
+    format: 'JSON',
+    charset: 'utf-8',
+    sign_type: 'RSA2',
+    timestamp: formatAlipayTimestamp(new Date()),
+    version: '1.0',
+    biz_content: JSON.stringify(bizContent)
+  };
+  if (method === 'alipay.trade.precreate') {
+    params.notify_url = getAlipayNotifyUrl(req);
+  }
+  params.sign = signAlipayParams(params);
+  const response = await fetch(alipay.gateway, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+    body: new URLSearchParams(params)
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data) throw new Error('支付宝网关请求失败。');
+  const rootKey = `${method.replace(/\./g, '_')}_response`;
+  const root = data[rootKey];
+  if (!root || root.code !== '10000') {
+    throw new Error(root?.sub_msg || root?.msg || '支付宝接口返回失败。');
+  }
+  return root;
+}
+
+function formatAlipayTimestamp(date) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function normalizeRechargeAmountYuan(value) {
+  const alipay = getAlipaySettingsSnapshot();
+  const amount = Math.round(Number(value || 0) * 100) / 100;
+  const min = Number(alipay.minAmountYuan || 1);
+  const max = Number(alipay.maxAmountYuan || 5000);
+  if (!Number.isFinite(amount) || amount < min || amount > max) return null;
+  return amount;
+}
 app.use(express.static(publicDir));
 app.use(ADMIN_BASE, express.static(path.join(__dirname, '..', 'public', 'admin')));
 app.use('/img', express.static(path.join(__dirname, '..', 'img')));
@@ -1532,6 +1689,140 @@ app.post('/api/character/delete', async (req, res) => {
     .del();
   await deleteCharacter(session.user_id, exactName, targetRealmId);
   res.json({ ok: true });
+});
+
+app.get('/api/recharge/alipay/config', (req, res) => {
+  const alipay = getAlipaySettingsSnapshot();
+  res.json({
+    ok: true,
+    enabled: isAlipayConfigured(),
+    yuanbaoPerYuan: alipay.yuanbaoPerYuan,
+    minAmountYuan: alipay.minAmountYuan,
+    maxAmountYuan: alipay.maxAmountYuan
+  });
+});
+
+app.post('/api/recharge/alipay/create', async (req, res) => {
+  try {
+    const { token, characterName, realmId: rawRealmId, amountYuan: rawAmountYuan } = req.body || {};
+    const session = await getSession(token);
+    if (!session) return res.status(401).json({ error: '登录已过期。' });
+    if (!isAlipayConfigured()) return res.status(400).json({ error: '支付宝当面付未启用。' });
+
+    const realmId = Math.max(1, Math.floor(Number(rawRealmId || 1) || 1));
+    const charName = String(characterName || '').trim();
+    if (!charName) return res.status(400).json({ error: '缺少角色名。' });
+    const character = await loadCharacter(session.user_id, charName, realmId);
+    if (!character) return res.status(404).json({ error: '角色不存在。' });
+
+    const amountYuan = normalizeRechargeAmountYuan(rawAmountYuan);
+    const alipay = getAlipaySettingsSnapshot();
+    if (amountYuan == null) {
+      return res.status(400).json({ error: `充值金额需在 ${alipay.minAmountYuan}-${alipay.maxAmountYuan} 元之间。` });
+    }
+    const yuanbao = Math.max(1, Math.floor(amountYuan * alipay.yuanbaoPerYuan));
+    const outTradeNo = buildAlipayOutTradeNo(session.user_id);
+    await createAlipayRechargeOrder({
+      outTradeNo,
+      userId: session.user_id,
+      realmId,
+      charName,
+      yuanbao,
+      amountYuan,
+      qrCode: ''
+    });
+
+    const subject = `元宝充值 ${yuanbao}`;
+    const ali = await callAlipay('alipay.trade.precreate', {
+      out_trade_no: outTradeNo,
+      total_amount: amountYuan.toFixed(2),
+      subject,
+      timeout_express: '30m'
+    }, req);
+    await markAlipayRechargeOrderCreated(outTradeNo, ali.qr_code || '');
+    res.json({
+      ok: true,
+      outTradeNo,
+      amountYuan: amountYuan.toFixed(2),
+      yuanbao,
+      qrCode: ali.qr_code || ''
+    });
+  } catch (err) {
+    console.warn('创建支付宝当面付订单失败:', err?.message || err);
+    res.status(500).json({ error: err?.message || '创建支付宝订单失败。' });
+  }
+});
+
+app.get('/api/recharge/alipay/status', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || String(req.query.token || '');
+    const session = await getSession(token);
+    if (!session) return res.status(401).json({ error: '登录已过期。' });
+    const outTradeNo = String(req.query.outTradeNo || '').trim();
+    const order = await getAlipayRechargeOrder(outTradeNo);
+    if (!order || Math.floor(Number(order.user_id || 0)) !== Math.floor(Number(session.user_id || 0))) {
+      return res.status(404).json({ error: '订单不存在。' });
+    }
+    let current = order;
+    if (current.status === 'created') {
+      current = await syncAlipayOrderPayment(current, req);
+    }
+    if (current.status === 'paid' && !current.credited_at) {
+      current = await creditPaidAlipayOrder(current);
+    }
+    res.json({
+      ok: true,
+      outTradeNo: current.out_trade_no,
+      status: current.status,
+      yuanbao: Number(current.yuanbao || 0),
+      amountYuan: Number(current.amount_yuan || 0).toFixed(2),
+      paidAt: current.paid_at || null,
+      creditedAt: current.credited_at || null
+    });
+  } catch (err) {
+    console.warn('查询支付宝充值订单失败:', err?.message || err);
+    res.status(500).json({ error: err?.message || '查询订单失败。' });
+  }
+});
+
+app.post('/api/recharge/alipay/notify', async (req, res) => {
+  try {
+    const payload = req.body || {};
+    if (!verifyAlipayNotify(payload)) {
+      console.warn('支付宝回调验签失败');
+      return res.send('failure');
+    }
+    const alipay = getAlipaySettingsSnapshot();
+    if (String(payload.app_id || '') !== alipay.appId) {
+      console.warn('支付宝回调 app_id 不匹配');
+      return res.send('failure');
+    }
+    const tradeStatus = String(payload.trade_status || '');
+    if (!['TRADE_SUCCESS', 'TRADE_FINISHED'].includes(tradeStatus)) {
+      return res.send('success');
+    }
+    const outTradeNo = String(payload.out_trade_no || '').trim();
+    const order = await getAlipayRechargeOrder(outTradeNo);
+    if (!order) return res.send('failure');
+    const paidCents = Math.round(Number(payload.total_amount || 0) * 100);
+    const orderCents = Math.round(Number(order.amount_yuan || 0) * 100);
+    if (!paidCents || paidCents !== orderCents) {
+      console.warn(`支付宝回调金额不匹配: order=${outTradeNo} paid=${payload.total_amount} expected=${order.amount_yuan}`);
+      return res.send('failure');
+    }
+    let paidOrder = await markAlipayRechargeOrderPaid(outTradeNo, {
+      tradeNo: String(payload.trade_no || ''),
+      buyerLogonId: String(payload.buyer_logon_id || ''),
+      notifyPayload: payload
+    });
+    if (paidOrder && paidOrder.status === 'paid' && !paidOrder.credited_at) {
+      paidOrder = await creditPaidAlipayOrder(paidOrder);
+    }
+    return res.send(paidOrder?.status === 'credited' ? 'success' : 'failure');
+  } catch (err) {
+    console.warn('处理支付宝回调失败:', err?.message || err);
+    return res.send('failure');
+  }
 });
 
 app.get('/api/mail', async (req, res) => {
@@ -3250,6 +3541,20 @@ app.post('/admin/svip-settings/update', async (req, res) => {
   setSvipPricesRuntime(prices);
   const next = await getSvipPrices();
   res.json({ ok: true, prices: next });
+});
+
+app.get('/admin/alipay-settings', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const settings = await getAlipaySettingsForAdmin();
+  res.json({ ok: true, settings });
+});
+
+app.post('/admin/alipay-settings/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const settings = await saveAlipaySettingsForAdmin(req.body?.settings || {});
+  res.json({ ok: true, settings });
 });
 
 app.get('/admin/state-throttle-status', async (req, res) => {
@@ -9880,12 +10185,11 @@ const consignApi = {
   }
 };
 
-const rechargeApi = {
-  async redeem(player, code) {
-    const used = await useRechargeCard(code, player.userId, player.name);
-    if (!used) return { ok: false, msg: '卡密无效或已使用。' };
-    const amount = Math.max(0, Math.floor(Number(used.amount || 0)));
-    if (!amount) return { ok: false, msg: '卡密金额异常。' };
+async function grantRechargeToPlayer(player, amount, options = {}) {
+  const source = String(options.source || 'auto_recharge');
+  const baseAmount = Math.max(0, Math.floor(Number(amount || 0)));
+  if (!player || !player.userId || !player.name) return { ok: false, msg: '角色不存在。' };
+  if (!baseAmount) return { ok: false, msg: '充值金额异常。' };
     const firstRechargeCfg = getFirstRechargeWelfareConfigSnapshot();
     const playerRealmId = Math.max(1, Math.floor(Number(player?.realmId || 1) || 1));
     const rewardMarkedInRealm = await hasFirstRechargeRewardMarkerByRealm(player.userId, playerRealmId);
@@ -9897,12 +10201,12 @@ const rechargeApi = {
     const inviteRate = Math.max(0, Math.min(1, Number(inviteCfg.bonusRate || 0)));
     const canApplyInviteFirstRechargeBonus = Boolean(inviteCfg.enabled !== false && inviteBinding && !inviteBonusAlreadyProcessed);
     const inviteExtraYuanbao = canApplyInviteFirstRechargeBonus
-      ? Math.max(0, Math.floor(amount * inviteRate))
+      ? Math.max(0, Math.floor(baseAmount * inviteRate))
       : 0;
     const inviterRebateYuanbao = canApplyInviteFirstRechargeBonus
-      ? Math.max(0, Math.floor(amount * inviteRate))
+      ? Math.max(0, Math.floor(baseAmount * inviteRate))
       : 0;
-    player.yuanbao = (player.yuanbao || 0) + amount + inviteExtraYuanbao;
+    player.yuanbao = (player.yuanbao || 0) + baseAmount + inviteExtraYuanbao;
     let firstRechargeMsg = '';
     if (canApplyInviteFirstRechargeBonus && inviteBinding) {
       let rebateResult = null;
@@ -9920,7 +10224,7 @@ const rechargeApi = {
       }
       if (rebateResult?.ok && inviterRebateYuanbao > 0) {
         await markInviteRebateIssuedForInvitee(player.userId, {
-          source: 'auto_recharge',
+          source,
           inviterUserId: inviteBinding.inviterUserId,
           inviteeCharName: player.name,
           rebateYuanbao: inviterRebateYuanbao,
@@ -9931,7 +10235,7 @@ const rechargeApi = {
       await markInviteFirstRechargeProcessed(player.userId, {
         inviterUserId: inviteBinding.inviterUserId,
         inviteeCharName: player.name,
-        sourceAmount: amount,
+        sourceAmount: baseAmount,
         bonusYuanbao: inviteExtraYuanbao,
         rebateYuanbao: inviterRebateYuanbao
       });
@@ -9946,16 +10250,80 @@ const rechargeApi = {
     if (isFirstRecharge) {
       const grant = grantFirstRechargeWelfareToPlayer(player, firstRechargeCfg);
       const rewardText = Array.isArray(grant.rewardText) ? grant.rewardText : [];
-      await markFirstRechargeRewardIssued(player.userId, { source: 'auto_recharge', charName: player.name });
-      await markFirstRechargeRewardIssuedByRealm(player.userId, playerRealmId, { source: 'auto_recharge', charName: player.name });
+      await markFirstRechargeRewardIssued(player.userId, { source, charName: player.name });
+      await markFirstRechargeRewardIssuedByRealm(player.userId, playerRealmId, { source, charName: player.name });
       if (rewardText.length) {
         firstRechargeMsg = `\n首充福利已发放：${rewardText.join('、')}。`;
       }
     }
-    await addSponsor(player.name, amount);
+    await addSponsor(player.name, baseAmount);
     await savePlayer(player, { immediate: true }); // 充值后立即保存
     player.forceStateRefresh = true;
-    return { ok: true, msg: `充值成功，获得 ${amount + inviteExtraYuanbao} 元宝。${inviteBonusMsg}${firstRechargeMsg}`.trim() };
+    player.send?.(`充值到账：元宝+${baseAmount + inviteExtraYuanbao}。${inviteBonusMsg}${firstRechargeMsg}`.trim());
+    return { ok: true, msg: `充值成功，获得 ${baseAmount + inviteExtraYuanbao} 元宝。${inviteBonusMsg}${firstRechargeMsg}`.trim() };
+}
+
+async function grantRechargeToCharacter({ userId, realmId = 1, charName, amount, source = 'alipay_recharge' }) {
+  const uid = Math.max(1, Math.floor(Number(userId) || 0));
+  const rid = Math.max(1, Math.floor(Number(realmId || 1) || 1));
+  const name = String(charName || '').trim();
+  const online = playersByName(name, rid);
+  if (online && Math.max(1, Math.floor(Number(online.userId) || 0)) === uid) {
+    return grantRechargeToPlayer(online, amount, { source });
+  }
+  const stored = await loadCharacter(uid, name, rid);
+  if (!stored) return { ok: false, msg: '角色不存在。' };
+  stored.userId = uid;
+  stored.realmId = rid;
+  stored.send = () => {};
+  return grantRechargeToPlayer(stored, amount, { source });
+}
+
+async function creditPaidAlipayOrder(order) {
+  if (!order || order.credited_at || order.status === 'credited') return order;
+  if (order.status !== 'paid') return order;
+  const result = await grantRechargeToCharacter({
+    userId: order.user_id,
+    realmId: order.realm_id || 1,
+    charName: order.char_name,
+    amount: order.yuanbao,
+    source: 'alipay_recharge'
+  });
+  if (!result?.ok) throw new Error(result?.msg || '支付宝订单到账失败。');
+  return markAlipayRechargeOrderCredited(order.out_trade_no);
+}
+
+async function syncAlipayOrderPayment(order, req = null) {
+  if (!order || order.status !== 'created') return order;
+  let query = null;
+  try {
+    query = await callAlipay('alipay.trade.query', {
+      out_trade_no: order.out_trade_no
+    }, req);
+  } catch {
+    return order;
+  }
+  const tradeStatus = String(query.trade_status || '');
+  if (!['TRADE_SUCCESS', 'TRADE_FINISHED'].includes(tradeStatus)) return order;
+  const paidCents = Math.round(Number(query.total_amount || 0) * 100);
+  const orderCents = Math.round(Number(order.amount_yuan || 0) * 100);
+  if (!paidCents || paidCents !== orderCents) {
+    throw new Error('支付宝查单金额与本地订单不一致。');
+  }
+  return markAlipayRechargeOrderPaid(order.out_trade_no, {
+    tradeNo: String(query.trade_no || ''),
+    buyerLogonId: String(query.buyer_logon_id || ''),
+    notifyPayload: query
+  });
+}
+
+const rechargeApi = {
+  async redeem(player, code) {
+    const used = await useRechargeCard(code, player.userId, player.name);
+    if (!used) return { ok: false, msg: '卡密无效或已使用。' };
+    const amount = Math.max(0, Math.floor(Number(used.amount || 0)));
+    if (!amount) return { ok: false, msg: '卡密金额异常。' };
+    return grantRechargeToPlayer(player, amount, { source: 'auto_recharge' });
   }
 };
 
