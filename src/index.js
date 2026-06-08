@@ -1785,6 +1785,10 @@ app.get('/api/recharge/alipay/status', async (req, res) => {
   }
 });
 
+app.get('/api/recharge/alipay/notify', (req, res) => {
+  res.type('text/plain').send('支付宝当面付异步通知地址正常。请在支付宝开放平台配置此 URL，支付宝会通过 POST 请求通知支付结果。');
+});
+
 app.post('/api/recharge/alipay/notify', async (req, res) => {
   try {
     const payload = req.body || {};
