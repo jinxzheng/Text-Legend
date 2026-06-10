@@ -1,8 +1,10 @@
+import { timestampDefault } from '../time.js';
+
 export async function up(knex) {
   await knex.schema.createTable('game_settings', (t) => {
     t.string('key', 64).primary();
     t.text('value').notNullable();
-    t.timestamp('updated_at').defaultTo(knex.fn.now());
+    t.timestamp('updated_at').defaultTo(timestampDefault(knex));
   });
 
   // 初始化VIP自助获取开关设置

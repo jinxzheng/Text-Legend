@@ -1,3 +1,5 @@
+import { timestampDefault } from '../time.js';
+
 export async function up(knex) {
   await knex.schema.createTable('alipay_recharge_orders', (t) => {
     t.increments('id').primary();
@@ -14,8 +16,8 @@ export async function up(knex) {
     t.text('notify_payload_json').nullable();
     t.timestamp('paid_at').nullable();
     t.timestamp('credited_at').nullable();
-    t.timestamp('created_at').defaultTo(knex.fn.now());
-    t.timestamp('updated_at').defaultTo(knex.fn.now());
+    t.timestamp('created_at').defaultTo(timestampDefault(knex));
+    t.timestamp('updated_at').defaultTo(timestampDefault(knex));
     t.index(['user_id', 'created_at']);
     t.index(['status', 'created_at']);
   });

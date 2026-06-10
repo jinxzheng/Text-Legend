@@ -1,3 +1,5 @@
+import { timestampDefault } from '../time.js';
+
 export async function up(knex) {
   await knex.schema.table('users', (t) => {
     t.boolean('is_admin').notNullable().defaultTo(false);
@@ -9,7 +11,7 @@ export async function up(knex) {
     t.string('from_name', 64).notNullable();
     t.string('title', 128).notNullable();
     t.text('body').notNullable();
-    t.timestamp('created_at').defaultTo(knex.fn.now());
+    t.timestamp('created_at').defaultTo(timestampDefault(knex));
     t.timestamp('read_at').nullable();
   });
 
@@ -18,7 +20,7 @@ export async function up(knex) {
     t.string('code', 32).notNullable().unique();
     t.integer('used_by_user_id').nullable();
     t.timestamp('used_at').nullable();
-    t.timestamp('created_at').defaultTo(knex.fn.now());
+    t.timestamp('created_at').defaultTo(timestampDefault(knex));
   });
 }
 

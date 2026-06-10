@@ -1,8 +1,14 @@
 import knex from './index.js';
+import { dbNow } from './time.js';
 
 export async function createAdminSession(userId) {
   const token = `adm_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
-  await knex('sessions').insert({ user_id: userId, token });
+  await knex('sessions').insert({
+    user_id: userId,
+    token,
+    created_at: dbNow(knex),
+    last_seen: dbNow(knex)
+  });
   return token;
 }
 

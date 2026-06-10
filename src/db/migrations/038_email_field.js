@@ -1,3 +1,5 @@
+import { timestampDefault } from '../time.js';
+
 export async function up(knex) {
   const hasEmail = await knex.schema.hasColumn('users', 'email');
   if (!hasEmail) {
@@ -20,7 +22,7 @@ export async function up(knex) {
       t.integer('user_id').unsigned().notNullable().references('users.id').onDelete('CASCADE');
       t.string('token', 255).notNullable().unique();
       t.timestamp('expires_at').notNullable();
-      t.timestamp('created_at').defaultTo(knex.fn.now());
+      t.timestamp('created_at').defaultTo(timestampDefault(knex));
       t.timestamp('used_at').nullable();
     });
   }

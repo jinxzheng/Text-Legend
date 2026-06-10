@@ -1,3 +1,5 @@
+import { timestampDefault } from '../time.js';
+
 export async function up(knex) {
   const client = String(knex?.client?.config?.client || '').toLowerCase();
   const isMysql = client.includes('mysql');
@@ -9,7 +11,7 @@ export async function up(knex) {
       t.string('name', 64).notNullable().unique();
       t.integer('leader_user_id').notNullable();
       t.string('leader_char_name', 64).notNullable();
-      t.timestamp('created_at').defaultTo(knex.fn.now());
+      t.timestamp('created_at').defaultTo(timestampDefault(knex));
     });
   }
 
@@ -31,7 +33,7 @@ export async function up(knex) {
       t.integer('id').primary();
       t.integer('owner_guild_id').nullable();
       t.string('owner_guild_name', 64).nullable();
-      t.timestamp('updated_at').defaultTo(knex.fn.now());
+      t.timestamp('updated_at').defaultTo(timestampDefault(knex));
     });
   }
 
@@ -40,7 +42,7 @@ export async function up(knex) {
     await knex.schema.createTable('sabak_registrations', (t) => {
       t.increments('id').primary();
       t.integer('guild_id').unsigned().notNullable().references('guilds.id').onDelete('CASCADE');
-      t.timestamp('registered_at').defaultTo(knex.fn.now());
+      t.timestamp('registered_at').defaultTo(timestampDefault(knex));
       t.unique(['guild_id']);
     });
   }

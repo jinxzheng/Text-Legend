@@ -1,3 +1,5 @@
+import { timestampDefault } from '../time.js';
+
 export async function up(knex) {
   const hasTable = await knex.schema.hasTable('consignments');
   if (hasTable) return;
@@ -7,7 +9,7 @@ export async function up(knex) {
     t.string('item_id').notNullable();
     t.integer('qty').notNullable();
     t.integer('price').notNullable();
-    t.timestamp('created_at').defaultTo(knex.fn.now());
+    t.timestamp('created_at').defaultTo(timestampDefault(knex));
   });
 }
 

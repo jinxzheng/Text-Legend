@@ -1,11 +1,13 @@
+import { timestampDefault } from '../time.js';
+
 export async function up(knex) {
   const hasZones = await knex.schema.hasTable('world_zones');
   if (!hasZones) {
     await knex.schema.createTable('world_zones', (t) => {
       t.string('zone_id', 64).notNullable().primary();
       t.text('data_json').notNullable();
-      t.timestamp('created_at').defaultTo(knex.fn.now());
-      t.timestamp('updated_at').defaultTo(knex.fn.now());
+      t.timestamp('created_at').defaultTo(timestampDefault(knex));
+      t.timestamp('updated_at').defaultTo(timestampDefault(knex));
     });
   }
 
@@ -15,8 +17,8 @@ export async function up(knex) {
       t.string('zone_id', 64).notNullable();
       t.string('room_id', 64).notNullable();
       t.text('data_json').notNullable();
-      t.timestamp('created_at').defaultTo(knex.fn.now());
-      t.timestamp('updated_at').defaultTo(knex.fn.now());
+      t.timestamp('created_at').defaultTo(timestampDefault(knex));
+      t.timestamp('updated_at').defaultTo(timestampDefault(knex));
       t.primary(['zone_id', 'room_id']);
     });
 

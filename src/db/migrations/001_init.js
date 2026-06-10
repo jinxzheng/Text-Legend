@@ -1,3 +1,5 @@
+import { timestampDefault } from '../time.js';
+
 export async function up(knex) {
   const client = String(knex?.client?.config?.client || '').toLowerCase();
   const isMysql = client.includes('mysql');
@@ -12,7 +14,7 @@ export async function up(knex) {
       t.increments('id').primary();
       t.string('username', 64).notNullable().unique();
       t.string('password_hash', 255).notNullable();
-      t.timestamp('created_at').defaultTo(knex.fn.now());
+      t.timestamp('created_at').defaultTo(timestampDefault(knex));
     });
   }
 
@@ -22,8 +24,8 @@ export async function up(knex) {
       t.increments('id').primary();
       t.integer('user_id').unsigned().notNullable().references('users.id').onDelete('CASCADE');
       t.string('token', 64).notNullable().unique();
-      t.timestamp('created_at').defaultTo(knex.fn.now());
-      t.timestamp('last_seen').defaultTo(knex.fn.now());
+      t.timestamp('created_at').defaultTo(timestampDefault(knex));
+      t.timestamp('last_seen').defaultTo(timestampDefault(knex));
     });
   }
 
@@ -47,7 +49,7 @@ export async function up(knex) {
       jsonText(t, 'equipment_json');
       jsonText(t, 'quests_json');
       jsonText(t, 'flags_json');
-      t.timestamp('updated_at').defaultTo(knex.fn.now());
+      t.timestamp('updated_at').defaultTo(timestampDefault(knex));
       t.unique(['user_id', 'name']);
     });
   }

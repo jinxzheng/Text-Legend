@@ -1,3 +1,5 @@
+import { timestampDefault } from '../time.js';
+
 export async function up(knex) {
   const client = String(knex?.client?.config?.client || '').toLowerCase();
   const isMysql = client.includes('mysql');
@@ -11,7 +13,7 @@ export async function up(knex) {
       t.string('name', 64).notNullable();
       if (isMysql) t.specificType('payload_json', 'LONGTEXT').notNullable();
       else t.text('payload_json').notNullable();
-      t.timestamp('deleted_at').defaultTo(knex.fn.now());
+      t.timestamp('deleted_at').defaultTo(timestampDefault(knex));
       t.timestamp('restored_at').nullable();
       t.integer('restored_character_id').nullable();
       t.index(['realm_id', 'name'], 'deleted_characters_realm_name_idx');

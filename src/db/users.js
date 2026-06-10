@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import knex from './index.js';
+import { dbNow } from './time.js';
 import config from '../config.js';
 
 function normalizeUsernameLookup(username) {
@@ -37,7 +38,12 @@ export async function verifyUser(username, password) {
 
 export async function createSession(userId) {
   const token = uuidv4().replace(/-/g, '');
-  await knex('sessions').insert({ user_id: userId, token });
+  await knex('sessions').insert({
+    user_id: userId,
+    token,
+    created_at: dbNow(knex),
+    last_seen: dbNow(knex)
+  });
   return token;
 }
 
@@ -53,7 +59,7 @@ export async function getSession(token) {
       return null;
     }
   }
-  await knex('sessions').where({ token }).update({ last_seen: knex.fn.now() });
+  await knex('sessions').where({ token }).update({ last_seen: dbNow(knex) });
   return session;
 }
 

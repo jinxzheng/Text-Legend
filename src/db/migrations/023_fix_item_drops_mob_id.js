@@ -1,4 +1,6 @@
-﻿export async function up(knex) {
+import { timestampDefault } from '../time.js';
+
+export async function up(knex) {
   const hasTable = await knex.schema.hasTable('item_drops');
   if (!hasTable) {
     console.log('item_drops table does not exist, skipping migration');
@@ -36,8 +38,8 @@
     t.integer('item_id').notNullable();
     t.string('mob_id', 64).notNullable();
     t.decimal('drop_chance', 5, 4).notNullable().defaultTo(0.0);
-    t.timestamp('created_at').defaultTo(knex.fn.now());
-    t.timestamp('updated_at').defaultTo(knex.fn.now());
+    t.timestamp('created_at').defaultTo(timestampDefault(knex));
+    t.timestamp('updated_at').defaultTo(timestampDefault(knex));
     t.unique(['item_id', 'mob_id']);
   });
 
@@ -71,8 +73,8 @@ export async function down(knex) {
     t.integer('item_id').notNullable();
     t.integer('mob_id').notNullable();
     t.decimal('drop_chance', 5, 4).notNullable().defaultTo(0.0);
-    t.timestamp('created_at').defaultTo(knex.fn.now());
-    t.timestamp('updated_at').defaultTo(knex.fn.now());
+    t.timestamp('created_at').defaultTo(timestampDefault(knex));
+    t.timestamp('updated_at').defaultTo(timestampDefault(knex));
     t.unique(['item_id', 'mob_id']);
   });
 
