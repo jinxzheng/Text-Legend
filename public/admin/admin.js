@@ -793,7 +793,7 @@ function renderActivityPointShopRows() {
   const rows = Array.isArray(activityPointShopRowsCache) ? activityPointShopRowsCache : [];
   activityPointShopList.innerHTML = '';
   if (!rows.length) {
-    activityPointShopList.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#999;">暂无商品，点击“添加商品”</td></tr>';
+    activityPointShopList.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#999;">暂无商品，点击“添加商品”</td></tr>';
     return;
   }
   rows.forEach((item, index) => {
@@ -805,8 +805,12 @@ function renderActivityPointShopRows() {
         ${buildActivityPointShopItemSelectHtml(item.itemId)}
       </td>
       <td><input data-k="qty" type="number" min="1" value="${Math.max(1, Number(item.qty || 1))}"></td>
-      <td><input data-k="cost" type="number" min="1" value="${Math.max(1, Number(item.cost || 1))}"></td>
-      <td><button type="button" class="btn-small" data-act="del">删除</button></td>
+      <td>
+        <div class="activity-point-shop-cost-cell">
+          <input data-k="cost" type="number" min="1" value="${Math.max(1, Number(item.cost || 1))}">
+          <button type="button" class="btn-small activity-point-shop-del-btn" data-act="del">删除</button>
+        </div>
+      </td>
     `;
     activityPointShopList.appendChild(tr);
   });

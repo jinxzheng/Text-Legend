@@ -904,17 +904,17 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
 /* 活动积分商城表格：物品列更紧凑、积分列更宽 */
 .compact-config-table-container table.activity-point-shop-table th:nth-child(1),
 .compact-config-table-container table.activity-point-shop-table td:nth-child(1) {
-  width: 52%;
+  width: 50%;
 }
 
 .compact-config-table-container table.activity-point-shop-table th:nth-child(2),
 .compact-config-table-container table.activity-point-shop-table td:nth-child(2) {
-  width: 30%;
+  width: 28%;
 }
 
 .compact-config-table-container table.activity-point-shop-table th:nth-child(3),
 .compact-config-table-container table.activity-point-shop-table td:nth-child(3) {
-  width: 18%;
+  width: 22%;
 }
 
 .compact-config-table-container table.activity-point-shop-table td:nth-child(1) select {
@@ -924,6 +924,24 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
 
 .compact-config-table-container table.activity-point-shop-table td:nth-child(2) input[type='number'] {
   min-width: 72px;
+}
+
+.activity-point-shop-cost-cell {
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.activity-point-shop-cost-cell input[type='number'] {
+  min-width: 72px;
+}
+
+.activity-point-shop-del-btn {
+  min-width: 52px;
+  padding-left: 10px;
+  padding-right: 10px;
+  white-space: nowrap;
 }
 
 .equipment-recycle-config-container {
