@@ -998,6 +998,7 @@ const registerOverlay = document.getElementById('register-overlay');
 const openRegisterBtn = document.getElementById('open-register-btn');
 const closeRegisterBtn = document.getElementById('close-register-btn');
 const registerOverlayBackdrop = document.getElementById('register-overlay-backdrop');
+const registerMsg = document.getElementById('register-msg');
 const charMsg = document.getElementById('char-msg');
 const characterList = document.getElementById('character-list');
 const realmSelect = document.getElementById('realm-select');
@@ -1179,6 +1180,7 @@ function openRegisterOverlay() {
   if (!registerOverlay) return;
   registerOverlay.style.display = 'flex';
   registerOverlay.classList.remove('hidden');
+  clearRegisterMsg();
   updateRegisterInviteHint();
   setTimeout(() => {
     const input = document.getElementById('register-username');
@@ -1191,6 +1193,19 @@ function closeRegisterOverlay() {
     registerOverlay.style.display = 'none';
   }
   registerOverlay?.classList.add('hidden');
+  clearRegisterMsg();
+}
+
+function setRegisterMsg(message, type = 'error') {
+  if (!registerMsg) return;
+  registerMsg.textContent = String(message || '');
+  registerMsg.dataset.type = type;
+}
+
+function clearRegisterMsg() {
+  if (!registerMsg) return;
+  registerMsg.textContent = '';
+  delete registerMsg.dataset.type;
 }
 
 function updateRegisterInviteHint() {
@@ -10662,6 +10677,7 @@ async function register() {
   const captchaCode = captchaUi.registerInput ? captchaUi.registerInput.value.trim() : '';
   const captchaToken = captchaUi.registerImg ? captchaUi.registerImg.dataset.token : '';
   authMsg.textContent = '';
+  clearRegisterMsg();
   const registerBtn = document.getElementById('register-btn');
   registerBtn.classList.add('btn-loading');
   try {
@@ -10682,7 +10698,7 @@ async function register() {
     });
     refreshCaptcha('register');
   } catch (err) {
-    authMsg.textContent = err.message;
+    setRegisterMsg(err.message || '注册失败，请稍后重试。');
     showToast('注册失败');
     registerBtn.classList.add('shake');
     setTimeout(() => registerBtn.classList.remove('shake'), 500);
