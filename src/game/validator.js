@@ -97,7 +97,19 @@ export function validatePlayerName(name) {
  */
 import { SKILLS } from './skills.js';
 
-const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock', 'elementAtk', 'skill'];
+const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock', 'elementAtk', 'skill', 'affixes'];
+const ALLOWED_AFFIX_ATTRS = new Set(['hp', 'mp', 'atk', 'def', 'mag', 'mdef', 'spirit', 'dex', 'elementAtk']);
+const AFFIX_LABELS = Object.freeze({
+  hp: 'hp',
+  mp: 'mp',
+  atk: 'atk',
+  def: 'def',
+  mag: 'mag',
+  mdef: 'mdef',
+  spirit: 'spirit',
+  dex: 'dex',
+  elementAtk: 'elementAtk'
+});
 const ALL_SKILL_IDS = new Set(Object.values(SKILLS).flatMap((group) => Object.values(group).map((skill) => skill.id)));
 
 export function validateEffects(effects) {
@@ -121,6 +133,26 @@ export function validateEffects(effects) {
       if (value && ALL_SKILL_IDS.has(value)) {
         normalized[key] = value;
       }
+      continue;
+    }
+    if (key === 'affixes') {
+      const affixes = Array.isArray(effects[key]) ? effects[key] : [];
+      const normalizedAffixes = affixes
+        .map((affix) => {
+          if (!affix || typeof affix !== 'object') return null;
+          const attr = String(affix.attr || '').trim();
+          if (!ALLOWED_AFFIX_ATTRS.has(attr)) return null;
+          const value = Math.max(1, Math.floor(Number(affix.value || 0)));
+          if (!Number.isFinite(value) || value <= 0) return null;
+          return {
+            attr,
+            label: String(affix.label || AFFIX_LABELS[attr] || attr).trim(),
+            value
+          };
+        })
+        .filter(Boolean)
+        .slice(0, 5);
+      if (normalizedAffixes.length > 0) normalized[key] = normalizedAffixes;
       continue;
     }
     if (effects[key]) {

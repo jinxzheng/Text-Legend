@@ -1665,7 +1665,11 @@ private fun formatEffectText(effects: JsonObject?): String {
     if (!skillId.isNullOrBlank()) {
         parts.add("附加技能:${skillNameById(skillId)}")
     }
-    val keys = effects.keys.filter { it != "elementAtk" && it != "skill" }
+    val affixes = formatEquipmentAffixes(effects)
+    if (affixes.isNotBlank()) {
+        parts.add("词条 $affixes")
+    }
+    val keys = effects.keys.filter { it != "elementAtk" && it != "skill" && it != "affixes" }
     if (keys.isNotEmpty()) {
         parts.add("特效 ${keys.joinToString("、") { effectLabel(it) }}")
     }
@@ -1679,11 +1683,46 @@ private fun formatEffectInline(effects: JsonObject?): String {
     if (!skillId.isNullOrBlank()) {
         parts.add("附加技能:${skillNameById(skillId)}")
     }
-    val keys = effects.keys.filter { it != "elementAtk" && it != "skill" }
+    val keys = effects.keys.filter { it != "elementAtk" && it != "skill" && it != "affixes" }
     if (keys.isNotEmpty()) {
         parts.add(keys.joinToString("、") { effectLabel(it) })
     }
+    val affixCount = equipmentAffixCount(effects)
+    if (affixCount > 0) parts.add("词条$affixCount")
     return parts.joinToString(" ")
+}
+
+private fun equipmentAffixCount(effects: JsonObject?): Int {
+    return (effects?.get("affixes") as? JsonArray)
+        ?.count { entry ->
+            val obj = entry as? JsonObject ?: return@count false
+            val value = obj["value"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+            value > 0
+        } ?: 0
+}
+
+private fun formatEquipmentAffixes(effects: JsonObject?): String {
+    val affixes = effects?.get("affixes") as? JsonArray ?: return ""
+    return affixes.mapNotNull { entry ->
+        val obj = entry as? JsonObject ?: return@mapNotNull null
+        val attr = obj["attr"]?.jsonPrimitive?.contentOrNull.orEmpty()
+        val label = obj["label"]?.jsonPrimitive?.contentOrNull?.ifBlank { null } ?: affixLabel(attr)
+        val value = obj["value"]?.jsonPrimitive?.doubleOrNull?.toInt() ?: 0
+        if (value <= 0) null else "$label+$value"
+    }.take(5).joinToString("、")
+}
+
+private fun affixLabel(attr: String): String = when (attr) {
+    "hp" -> "生命"
+    "mp" -> "魔法值"
+    "atk" -> "攻击"
+    "def" -> "防御"
+    "mag" -> "魔法"
+    "mdef" -> "魔御"
+    "spirit" -> "道术"
+    "dex" -> "敏捷"
+    "elementAtk" -> "元素攻击"
+    else -> attr.ifBlank { "词条" }
 }
 
 private fun skillNameById(id: String): String {
@@ -4401,10 +4440,10 @@ private fun EffectDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             Text("成功率: ${formatRate(effectConfig.success_rate)}")
             Text(
                 "多特效概率: " +
-                    "2条${formatRate(effectConfig.double_rate)} " +
-                    "3条${formatRate(effectConfig.triple_rate)} " +
-                    "4条${formatRate(effectConfig.quadruple_rate)} " +
-                    "5条${formatRate(effectConfig.quintuple_rate)}"
+                    "2特效/2词条${formatRate(effectConfig.double_rate)} " +
+                    "3特效/3词条${formatRate(effectConfig.triple_rate)} " +
+                    "4特效/4词条${formatRate(effectConfig.quadruple_rate)} " +
+                    "5特效/5词条${formatRate(effectConfig.quintuple_rate)}"
             )
         }
         Text("说明：主件为已穿戴，副件自动匹配背包内符合条件的装备。")
@@ -4703,8 +4742,12 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
     val beastExchange by vm.activityDivineBeastExchange.collectAsState()
     var showPointShop by remember { mutableStateOf(false) }
     var showBeastExchange by remember { mutableStateOf(false) }
+    var showDailyBounty by remember { mutableStateOf(false) }
+    var showEquipmentCodex by remember { mutableStateOf(false) }
     val activityRoot = state?.activities as? JsonObject
     val progress = activityRoot?.get("progress") as? JsonObject
+    val dailyBounty = progress?.get("daily_bounty") as? JsonObject
+    val equipmentCodex = state?.equipment_codex as? JsonObject
     val harvest = progress?.get("harvest_season") as? JsonObject
     val harvestMinutes = harvest?.get("onlineMinutes")?.jsonPrimitive?.intOrNull ?: 0
     val harvestPatrol = harvest?.get("patrolPoints")?.jsonPrimitive?.intOrNull ?: 0
@@ -4737,6 +4780,21 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
         )
         return
     }
+    if (showDailyBounty) {
+        DailyBountyDialog(
+            vm = vm,
+            bounty = dailyBounty,
+            onDismiss = { showDailyBounty = false }
+        )
+        return
+    }
+    if (showEquipmentCodex) {
+        EquipmentCodexDialog(
+            codex = equipmentCodex,
+            onDismiss = { showEquipmentCodex = false }
+        )
+        return
+    }
 
     ScreenScaffold(title = "活动中心", onBack = onDismiss) {
         Text("常用活动功能", style = MaterialTheme.typography.titleMedium)
@@ -4764,6 +4822,17 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
                 vm.requestActivityDivineBeastExchange()
             }
         ) { Text("神兽碎片兑换") }
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = { showDailyBounty = true }
+            ) { Text("每日悬赏") }
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = { showEquipmentCodex = true }
+            ) { Text("装备图鉴") }
+        }
         Spacer(modifier = Modifier.height(12.dp))
         val chestText = if (harvestChestActive) {
             "${if (harvestChestName.isNotBlank()) harvestChestName else "丰收宝箱"}${if (harvestChestClaimed) "已领取" else "可领取"}"
@@ -4777,6 +4846,15 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             "丰收季：签到${if (harvestLoginClaimed) "已领取" else "未领取"} / 赐福${if (harvestBlessingName.isNotBlank()) harvestBlessingName else if (harvestBlessingClaimed) "已领取" else "未领取"} / 补给${if (harvestSupplyClaimed) "已领取" else "未领取"} / 宝箱$chestText / 挂机 ${harvestMinutes} 分钟 / 巡礼 ${harvestPatrol}（奖励统一计入活动积分）",
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            "每日悬赏：可领取 ${dailyBounty?.get("claimableCount")?.jsonPrimitive?.intOrNull ?: 0} 项 / 已完成 ${dailyBounty?.get("completedCount")?.jsonPrimitive?.intOrNull ?: 0} 项",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            "装备图鉴：${equipmentCodex?.get("unlocked")?.jsonPrimitive?.intOrNull ?: 0}/${equipmentCodex?.get("total")?.jsonPrimitive?.intOrNull ?: 0}（${equipmentCodex?.get("percent")?.jsonPrimitive?.contentOrNull ?: "0"}%）",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         pointShop?.let {
             Spacer(modifier = Modifier.height(6.dp))
             Text("当前活动积分：${it.points}", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -4786,6 +4864,175 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             Text("${it.fragmentName}：${it.fragmentQty}", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+@Composable
+private fun DailyBountyDialog(
+    vm: GameViewModel,
+    bounty: JsonObject?,
+    onDismiss: () -> Unit
+) {
+    val tasks = (bounty?.get("tasks") as? JsonArray).orEmpty()
+    val claimableCount = bounty?.get("claimableCount")?.jsonPrimitive?.intOrNull ?: 0
+    ScreenScaffold(title = "每日悬赏", onBack = onDismiss) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                modifier = Modifier.weight(1f),
+                enabled = claimableCount > 0,
+                onClick = { vm.claimDailyBounty("all") }
+            ) { Text("一键领取 $claimableCount") }
+            OutlinedButton(
+                modifier = Modifier.weight(1f),
+                onClick = { vm.requestState("daily_bounty") }
+            ) { Text("刷新") }
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        if (tasks.isEmpty()) {
+            Text("暂无悬赏任务", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            tasks.forEach { entry ->
+                val task = entry as? JsonObject ?: return@forEach
+                val id = task["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                val name = task["name"]?.jsonPrimitive?.contentOrNull ?: id
+                val desc = task["desc"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                val progressValue = task["progress"]?.jsonPrimitive?.intOrNull ?: 0
+                val target = (task["target"]?.jsonPrimitive?.intOrNull ?: 1).coerceAtLeast(1)
+                val points = task["points"]?.jsonPrimitive?.intOrNull ?: 0
+                val gold = task["gold"]?.jsonPrimitive?.intOrNull ?: 0
+                val claimed = task["claimed"]?.jsonPrimitive?.contentOrNull == "true"
+                val canClaim = task["canClaim"]?.jsonPrimitive?.contentOrNull == "true"
+                val items = (task["items"] as? JsonArray).orEmpty().mapNotNull { itemEntry ->
+                    val obj = itemEntry as? JsonObject ?: return@mapNotNull null
+                    val itemName = obj["name"]?.jsonPrimitive?.contentOrNull
+                        ?: obj["id"]?.jsonPrimitive?.contentOrNull
+                        ?: return@mapNotNull null
+                    val qty = obj["qty"]?.jsonPrimitive?.intOrNull ?: 1
+                    "$itemName x$qty"
+                }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(name, fontWeight = FontWeight.SemiBold)
+                            Text(if (claimed) "已领取" else if (canClaim) "可领取" else "$progressValue/$target")
+                        }
+                        if (desc.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(desc, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = (progressValue.toFloat() / target.toFloat()).coerceIn(0f, 1f),
+                            modifier = Modifier.fillMaxWidth().height(6.dp),
+                            trackColor = MaterialTheme.colorScheme.surface
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "奖励：活动积分+$points / 金币+$gold${if (items.isNotEmpty()) " / ${items.joinToString("、")}" else ""}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (!claimed) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                enabled = canClaim && id.isNotBlank(),
+                                onClick = { vm.claimDailyBounty(id) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text(if (canClaim) "领取奖励" else "未完成") }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun EquipmentCodexDialog(
+    codex: JsonObject?,
+    onDismiss: () -> Unit
+) {
+    val total = codex?.get("total")?.jsonPrimitive?.intOrNull ?: 0
+    val unlocked = codex?.get("unlocked")?.jsonPrimitive?.intOrNull ?: 0
+    val percent = codex?.get("percent")?.jsonPrimitive?.contentOrNull ?: "0"
+    val byRarity = codex?.get("byRarity") as? JsonObject
+    val bonus = codex?.get("bonus") as? JsonObject
+    val recent = (codex?.get("recent") as? JsonArray).orEmpty()
+    ScreenScaffold(title = "装备图鉴", onBack = onDismiss) {
+        Text("点亮进度：$unlocked/$total（$percent%）", fontWeight = FontWeight.SemiBold)
+        Spacer(modifier = Modifier.height(8.dp))
+        LinearProgressIndicator(
+            progress = if (total > 0) (unlocked.toFloat() / total.toFloat()).coerceIn(0f, 1f) else 0f,
+            modifier = Modifier.fillMaxWidth().height(8.dp)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Text("稀有度进度", style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(6.dp))
+        val rarityRows = byRarity?.values.orEmpty().mapNotNull { entry ->
+            val obj = entry as? JsonObject ?: return@mapNotNull null
+            val totalByRarity = obj["total"]?.jsonPrimitive?.intOrNull ?: 0
+            if (totalByRarity <= 0) return@mapNotNull null
+            val label = obj["label"]?.jsonPrimitive?.contentOrNull ?: obj["key"]?.jsonPrimitive?.contentOrNull.orEmpty()
+            val unlockedByRarity = obj["unlocked"]?.jsonPrimitive?.intOrNull ?: 0
+            "$label：$unlockedByRarity/$totalByRarity"
+        }
+        Text(rarityRows.joinToString(" / ").ifBlank { "暂无" }, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.height(12.dp))
+        Text("永久加成", style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(formatCodexBonus(bonus), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.height(12.dp))
+        Text("最近点亮", style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(6.dp))
+        if (recent.isEmpty()) {
+            Text("暂无", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            recent.forEach { entry ->
+                val obj = entry as? JsonObject ?: return@forEach
+                val name = obj["name"]?.jsonPrimitive?.contentOrNull ?: obj["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                val rarity = obj["rarity"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                Text(
+                    if (rarity.isNotBlank()) "$name（${rarityLabel(rarity)}）" else name,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+private fun formatCodexBonus(bonus: JsonObject?): String {
+    if (bonus == null) return "暂无"
+    val parts = listOf(
+        "max_hp" to "生命",
+        "max_mp" to "魔法值",
+        "atk" to "攻击",
+        "def" to "防御",
+        "mag" to "魔法",
+        "spirit" to "道术",
+        "mdef" to "魔御",
+        "dex" to "敏捷"
+    ).mapNotNull { (key, label) ->
+        val value = bonus[key]?.jsonPrimitive?.intOrNull ?: 0
+        if (value > 0) "$label+$value" else null
+    }
+    return parts.joinToString("、").ifBlank { "暂无" }
+}
+
+private fun rarityLabel(rarity: String): String = when (rarity.lowercase()) {
+    "common" -> "普通"
+    "uncommon" -> "优秀"
+    "rare" -> "稀有"
+    "epic" -> "史诗"
+    "legendary" -> "传说"
+    "supreme" -> "至尊"
+    "ultimate" -> "终极"
+    else -> rarity
 }
 
 @Composable
@@ -5834,6 +6081,14 @@ private fun hasSpecialEffects(effects: JsonObject?): Boolean {
     return effects != null && effects.isNotEmpty()
 }
 
+private fun hasEffectResetMaterialEffects(effects: JsonObject?): Boolean {
+    if (effects == null) return false
+    val baseEffects = setOf("combo", "fury", "unbreakable", "defense", "dodge", "poison", "healblock")
+    if (baseEffects.any { effects[it] != null }) return true
+    val skill = effects["skill"]?.jsonPrimitive?.contentOrNull.orEmpty()
+    return skill.isNotBlank()
+}
+
   private fun buildEffectSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
       if (state == null || mainSelection.isBlank()) return emptyList()
       val mainExists = when {
@@ -5864,7 +6119,7 @@ private fun hasSpecialEffects(effects: JsonObject?): Boolean {
               val notShop = item.is_shop_item != true
               val rarityKey = normalizeRarityKey(item.rarity)
               val rarityOk = rarityKey != "supreme" && rarityKey != "ultimate"
-              isEquip && notShop && rarityOk && hasSpecialEffects(item.effects) && item.qty > 0
+              isEquip && notShop && rarityOk && hasEffectResetMaterialEffects(item.effects) && item.qty > 0
           }
           .map { item ->
               val key = if (item.key.isNotBlank()) item.key else item.id

@@ -447,6 +447,7 @@ class GameViewModel(application: Application) : AndroidViewModel(application) {
     fun claimHarvestSign() = sendCmd("活动 丰收签到")
     fun redeemActivityPointShop(itemId: String, qty: Int) = sendCmd("活动 redeem $itemId ${qty.coerceAtLeast(1)}")
     fun redeemActivityDivineBeast(exchangeId: String, qty: Int) = sendCmd("活动 神兽兑换 $exchangeId ${qty.coerceAtLeast(1)}")
+    fun claimDailyBounty(taskId: String = "all") = socket.dailyBountyClaim(taskId)
 
     fun requestShop() = sendCmd("shop")
 

@@ -4142,12 +4142,53 @@ function formatForgeMeta(item) {
   if (item.effects && item.effects.healblock) tags.push('禁疗');
   if (skillLabel) tags.push(`附加技能:${skillLabel}`);
   if (item.effects && item.effects.elementAtk) tags.push(`元素攻击+${Math.floor(item.effects.elementAtk)}`);
+  const affixes = getEquipmentAffixes(item);
+  if (affixes.length > 0) tags.push(`词条${affixes.length}条`);
   if (!tags.length) return '特效: 无';
   return `特效: ${tags.join(' / ')}`;
 }
 
 function hasSpecialEffects(effects) {
   return effects && Object.keys(effects).length > 0;
+}
+
+function getEquipmentAffixes(item) {
+  const affixes = item?.effects?.affixes;
+  if (!Array.isArray(affixes)) return [];
+  return affixes
+    .map((affix) => {
+      if (!affix || typeof affix !== 'object') return null;
+      const value = Math.floor(Number(affix.value || 0));
+      if (!Number.isFinite(value) || value <= 0) return null;
+      return {
+        attr: String(affix.attr || '').trim(),
+        label: String(affix.label || getEquipmentAffixLabel(affix.attr)).trim(),
+        value
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 5);
+}
+
+function getEquipmentAffixLabel(attr) {
+  const labels = {
+    hp: '生命',
+    mp: '魔法值',
+    atk: '攻击',
+    def: '防御',
+    mag: '魔法',
+    mdef: '魔御',
+    spirit: '道术',
+    dex: '敏捷',
+    elementAtk: '元素攻击'
+  };
+  return labels[attr] || attr || '词条';
+}
+
+function formatEquipmentAffixes(item) {
+  const affixes = getEquipmentAffixes(item);
+  if (!affixes.length) return '';
+  return affixes.map((affix) => `${affix.label}+${affix.value}`).join(' / ');
 }
 
 const PET_EQUIP_SLOT_LABELS = {
@@ -4955,10 +4996,10 @@ function renderEffectModal() {
   const quintupleRate = config.quintuple_rate ?? 0.00001;
 
   effectUi.successRate.textContent = `成功率：${successRate}% （失败副件消耗）`;
-  effectUi.doubleRate.textContent = `双特效概率：${doubleRate}%`;
-  effectUi.tripleRate.textContent = `3特效概率：${tripleRate}%`;
-  effectUi.quadrupleRate.textContent = `4特效概率：${quadrupleRate}%`;
-  effectUi.quintupleRate.textContent = `5特效概率：${quintupleRate}%`;
+  effectUi.doubleRate.textContent = `双特效/2词条概率：${doubleRate}%`;
+  effectUi.tripleRate.textContent = `3特效/3词条概率：${tripleRate}%`;
+  effectUi.quadrupleRate.textContent = `4特效/4词条概率：${quadrupleRate}%`;
+  effectUi.quintupleRate.textContent = `5特效/5词条概率：${quintupleRate}%`;
 
   // 主件列表：只显示已穿戴的装备（必须有特效）
   const { heroEntries, petEntries } = buildEquippedOperationEntries({
@@ -5008,7 +5049,7 @@ function dispatchNextEffectBatchCommand() {
     return;
   }
   effectBatchTask.inFlight = true;
-  socket.emit('cmd', { text: `effect ${effectBatchTask.mainSlot} ${nextSecondaryKey}` });
+  socket.emit('cmd', { text: `effect ${effectBatchTask.mainSlot} ${nextSecondaryKey}`, source: 'ui' });
   effectBatchTask.timer = setTimeout(() => {
     if (!effectBatchTask.active) return;
     effectBatchTask.inFlight = false;
@@ -5047,7 +5088,7 @@ function updateEffectSelection(selected) {
 
     effectUi.confirm.onclick = () => {
       const command = `effect ${selected.mainKey} ${secondary.key}`;
-      socket.emit('cmd', { text: command });
+      socket.emit('cmd', { text: command, source: 'ui' });
       // 不自动关闭窗口
     };
 
@@ -8483,6 +8524,10 @@ function formatItemTooltip(item) {
   if (item.effects && item.effects.elementAtk) {
     lines.push(`\u7279\u6548: \u5143\u7d20\u653b\u51fb+${Math.floor(item.effects.elementAtk)}(\u65e0\u89c6\u9632\u5fa1/\u9b54\u5fa1)`);
   }
+  const affixText = formatEquipmentAffixes(item);
+  if (affixText) {
+    lines.push(`词条: ${affixText}`);
+  }
   const typeLabel = ITEM_TYPE_LABELS[item.type] || ITEM_TYPE_LABELS.unknown;
   lines.push(`\u7c7b\u578b: ${typeLabel}`);
   if (item.slot) {
@@ -9037,6 +9082,8 @@ function formatItemName(item) {
   if (item.effects && item.effects.healblock) tags.push('\u7981\u7597');
   if (skillLabel) tags.push(`附加技能:${skillLabel}`);
   if (item.effects && item.effects.elementAtk) tags.push(`\u5143\u7d20+${Math.floor(item.effects.elementAtk)}`);
+  const affixes = getEquipmentAffixes(item);
+  if (affixes.length > 0) tags.push(`词条${affixes.length}`);
   if (item.refine_level && item.refine_level > 0) tags.push(`锻造+${item.refine_level}`);
   return tags.length ? `${baseName}\u00b7${tags.join('\u00b7')}` : baseName;
 }

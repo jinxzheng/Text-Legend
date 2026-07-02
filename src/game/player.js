@@ -254,6 +254,38 @@ function rarityByPrice(item) {
   return 'common';
 }
 
+const EQUIPMENT_AFFIX_LABELS = Object.freeze({
+  hp: '生命',
+  mp: '魔法值',
+  atk: '攻击',
+  def: '防御',
+  mag: '魔法',
+  mdef: '魔御',
+  spirit: '道术',
+  dex: '敏捷',
+  elementAtk: '元素攻击'
+});
+const EQUIPMENT_AFFIX_ATTRS = new Set(Object.keys(EQUIPMENT_AFFIX_LABELS));
+
+function normalizeEffectAffixes(affixes) {
+  if (!Array.isArray(affixes)) return [];
+  return affixes
+    .map((affix) => {
+      if (!affix || typeof affix !== 'object') return null;
+      const attr = String(affix.attr || '').trim();
+      if (!EQUIPMENT_AFFIX_ATTRS.has(attr)) return null;
+      const value = Math.max(1, Math.floor(Number(affix.value || 0)));
+      if (!Number.isFinite(value) || value <= 0) return null;
+      return {
+        attr,
+        label: String(affix.label || EQUIPMENT_AFFIX_LABELS[attr] || attr).trim(),
+        value
+      };
+    })
+    .filter(Boolean)
+    .slice(0, 5);
+}
+
 function normalizeEffects(effects) {
   if (!effects || typeof effects !== 'object') return null;
   const normalized = {};
@@ -270,6 +302,8 @@ function normalizeEffects(effects) {
   if (Number(effects.elementAtk || 0) > 0) {
     normalized.elementAtk = Math.max(1, Math.floor(Number(effects.elementAtk)));
   }
+  const affixes = normalizeEffectAffixes(effects.affixes);
+  if (affixes.length > 0) normalized.affixes = affixes;
   return Object.keys(normalized).length ? normalized : null;
 }
 
@@ -285,6 +319,14 @@ function effectsKey(effects) {
   if (effects.healblock) parts.push('healblock');
   if (effects.skill) parts.push(`skill:${effects.skill}`);
   if (Number(effects.elementAtk || 0) > 0) parts.push(`elementAtk:${Math.floor(Number(effects.elementAtk))}`);
+  const affixes = normalizeEffectAffixes(effects.affixes);
+  if (affixes.length > 0) {
+    const affixKey = affixes
+      .map((affix) => `${affix.attr}:${affix.value}`)
+      .sort()
+      .join(',');
+    parts.push(`affixes:${affixKey}`);
+  }
   return parts.join('+');
 }
 
@@ -710,6 +752,7 @@ export function computeDerived(player) {
   let healblockEffectCount = 0;
   const refineAttrBonus = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
   const growthAttrBonus = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0 };
+  const affixAttrBonus = { hp: 0, mp: 0, atk: 0, def: 0, mag: 0, mdef: 0, spirit: 0, dex: 0, elementAtk: 0 };
   // 宠物大部分属性加成对人物关闭；仅保留少数明确设计的专属护主技能。
   const petSkills = new Set();
   const activePetSkills = getActivePetSkillSet(player);
@@ -1024,6 +1067,14 @@ export function computeDerived(player) {
     if (entry.effects?.elementAtk) {
       elementAtk += Math.max(0, Math.floor(entry.effects.elementAtk));
     }
+    const affixes = normalizeEffectAffixes(entry.effects?.affixes);
+    for (const affix of affixes) {
+      if (affix.attr === 'elementAtk') {
+        affixAttrBonus.elementAtk += affix.value;
+      } else if (Object.prototype.hasOwnProperty.call(affixAttrBonus, affix.attr)) {
+        affixAttrBonus[affix.attr] += affix.value;
+      }
+    }
     stats.str += atk || 0;
     stats.dex += dex || 0;
     stats.int += mag || 0;
@@ -1239,7 +1290,7 @@ export function computeDerived(player) {
     player.max_mp += Math.floor(baseDerivedStats.max_mp * (guildBattleBonusPct * 0.8));
   }
 
-  // 锻造/修炼/修炼果属性最后加入，不参与其他百分比加成
+  // 锻造/成长/词条/修炼果属性最后加入，不参与其他百分比加成
   player.max_hp += refineAttrBonus.hp;
   player.max_mp += refineAttrBonus.mp;
   player.atk += refineAttrBonus.atk;
@@ -1256,6 +1307,15 @@ export function computeDerived(player) {
   player.spirit += growthAttrBonus.spirit;
   player.mdef += growthAttrBonus.mdef;
   player.dex += growthAttrBonus.dex;
+  player.max_hp += affixAttrBonus.hp;
+  player.max_mp += affixAttrBonus.mp;
+  player.atk += affixAttrBonus.atk;
+  player.def += affixAttrBonus.def;
+  player.mag += affixAttrBonus.mag;
+  player.spirit += affixAttrBonus.spirit;
+  player.mdef += affixAttrBonus.mdef;
+  player.dex += affixAttrBonus.dex;
+  player.elementAtk += affixAttrBonus.elementAtk;
   player.max_hp += trainingBonus.hp + trainingFruitBonus.hp;
   player.max_mp += trainingBonus.mp + trainingFruitBonus.mp;
   player.atk += trainingBonus.atk + trainingFruitBonus.atk;

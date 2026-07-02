@@ -73,6 +73,25 @@ import {
 
 // 特效重置：生成随机特效（不包含elementAtk，因为元素攻击只能通过装备合成获得）
 const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock'];
+const EQUIPMENT_AFFIX_DEFS = Object.freeze([
+  { attr: 'hp', label: '生命', min: 80, max: 180 },
+  { attr: 'mp', label: '魔法值', min: 50, max: 140 },
+  { attr: 'atk', label: '攻击', min: 8, max: 24 },
+  { attr: 'def', label: '防御', min: 8, max: 24 },
+  { attr: 'mag', label: '魔法', min: 8, max: 24 },
+  { attr: 'mdef', label: '魔御', min: 8, max: 24 },
+  { attr: 'spirit', label: '道术', min: 8, max: 24 },
+  { attr: 'dex', label: '敏捷', min: 5, max: 16 }
+]);
+const EQUIPMENT_AFFIX_RARITY_MULTIPLIER = Object.freeze({
+  common: 1,
+  uncommon: 1.2,
+  rare: 1.5,
+  epic: 2,
+  legendary: 2.8,
+  supreme: 3.8,
+  ultimate: 5
+});
 const AUTO_FULL_TRIAL_MS = 10 * 60 * 1000;
 
 function describeHarvestSignRewardText() {
@@ -594,6 +613,42 @@ function generateRandomEffects(count, options = {}) {
     available.splice(randomIndex, 1);
   }
   return Object.keys(effects).length > 0 ? effects : null;
+}
+
+function rollEffectResetCount() {
+  const quintupleEffect = Math.random() * 100 < getEffectResetQuintupleRate();
+  const quadrupleEffect = Math.random() * 100 < getEffectResetQuadrupleRate();
+  const tripleEffect = Math.random() * 100 < getEffectResetTripleRate();
+  const doubleEffect = Math.random() * 100 < getEffectResetDoubleRate();
+  if (quintupleEffect) return 5;
+  if (quadrupleEffect) return 4;
+  if (tripleEffect) return 3;
+  if (doubleEffect) return 2;
+  return 1;
+}
+
+function generateEquipmentAffixes(item, count) {
+  const rarity = rarityByPrice(item);
+  const multiplier = EQUIPMENT_AFFIX_RARITY_MULTIPLIER[rarity] || 1;
+  const pool = [...EQUIPMENT_AFFIX_DEFS];
+  const affixes = [];
+  for (let i = 0; i < count && pool.length > 0; i++) {
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    const def = pool[randomIndex];
+    pool.splice(randomIndex, 1);
+    const baseValue = def.min + Math.floor(Math.random() * (def.max - def.min + 1));
+    affixes.push({
+      attr: def.attr,
+      label: def.label,
+      value: Math.max(1, Math.floor(baseValue * multiplier))
+    });
+  }
+  return affixes;
+}
+
+function formatEquipmentAffixes(affixes) {
+  if (!Array.isArray(affixes) || affixes.length === 0) return '无';
+  return affixes.map((affix) => `${affix.label || affix.attr}+${Math.floor(Number(affix.value || 0))}`).join('、');
 }
 
 function hasEffectResetMaterialEffects(effects) {
@@ -4762,23 +4817,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
 
       // 判断获得几条特效（从高到低依次判断，避免重复触发）
       let effectCount = 0;
+      let affixCount = 0;
       if (success) {
-        const quintupleEffect = Math.random() * 100 < getEffectResetQuintupleRate();
-        const quadrupleEffect = Math.random() * 100 < getEffectResetQuadrupleRate();
-        const tripleEffect = Math.random() * 100 < getEffectResetTripleRate();
-        const doubleEffect = Math.random() * 100 < getEffectResetDoubleRate();
-
-        if (quintupleEffect) {
-          effectCount = 5;
-        } else if (quadrupleEffect) {
-          effectCount = 4;
-        } else if (tripleEffect) {
-          effectCount = 3;
-        } else if (doubleEffect) {
-          effectCount = 2;
-        } else {
-          effectCount = 1;
-        }
+        effectCount = rollEffectResetCount();
+        affixCount = rollEffectResetCount();
       }
 
       // 保存主件原有特效（失败时保留）
@@ -4805,20 +4847,25 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         if (originalSkill) {
           newEffects.skill = originalSkill;
         }
+        const affixes = generateEquipmentAffixes(mainItem, affixCount);
+        if (affixes.length > 0) {
+          newEffects.affixes = affixes;
+        }
+        const affixText = `，词条${affixes.length}条：${formatEquipmentAffixes(affixes)}`;
         if (effectCount === 5) {
-          send(`特效重置成功！${mainItem.name} 获得5条新特效！`);
+          send(`特效重置成功！${mainItem.name} 获得5条新特效${affixText}！`);
           emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得5条新特效！`, 'announce', null);
         } else if (effectCount === 4) {
-          send(`特效重置成功！${mainItem.name} 获得4条新特效！`);
+          send(`特效重置成功！${mainItem.name} 获得4条新特效${affixText}！`);
           emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得4条新特效！`, 'announce', null);
         } else if (effectCount === 3) {
-          send(`特效重置成功！${mainItem.name} 获得3条新特效！`);
+          send(`特效重置成功！${mainItem.name} 获得3条新特效${affixText}！`);
           emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得3条新特效！`, 'announce', null);
         } else if (effectCount === 2) {
-          send(`特效重置成功！${mainItem.name} 获得2条新特效！`);
+          send(`特效重置成功！${mainItem.name} 获得2条新特效${affixText}！`);
           emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得2条新特效！`, 'announce', null);
         } else {
-          send(`特效重置成功！${mainItem.name} 获得1条新特效。`);
+          send(`特效重置成功！${mainItem.name} 获得1条新特效${affixText}。`);
           emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得1条新特效！`, 'announce', null);
         }
       } else {
@@ -4853,7 +4900,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       // 系统日志
       if (logLoot) {
         if (success) {
-          logLoot(`[effect] ${player.name} 特效重置成功 ${mainItem.name} ${effectCount}条`);
+          logLoot(`[effect] ${player.name} 特效重置成功 ${mainItem.name} ${effectCount}条 词条${affixCount}条`);
         } else {
           logLoot(`[effect] ${player.name} 特效重置失败 ${mainItem.name}`);
         }
