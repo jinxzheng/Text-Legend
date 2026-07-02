@@ -7124,6 +7124,70 @@ async function showCommissionBoardModal() {
     });
   }
 
+  async function showDailyBountyModal() {
+    const bounty = lastState?.activities?.progress?.daily_bounty || {};
+    const tasks = Array.isArray(bounty.tasks) ? bounty.tasks : [];
+    const summaryLines = tasks.map((task) => {
+      const status = task.claimed ? '已领取' : (task.completed ? '可领取' : '进行中');
+      const itemText = Array.isArray(task.items) && task.items.length
+        ? `，${task.items.map((entry) => `${entry.name || entry.id}x${entry.qty}`).join('、')}`
+        : '';
+      return `${task.name}：${task.progress}/${task.target}（${status}，奖励 ${Number(task.points || 0)} 活动积分、${Number(task.gold || 0)} 金币${itemText}）`;
+    });
+    const options = [];
+    if (tasks.some((task) => task.canClaim)) {
+      options.push({ value: 'claim', label: `一键领取（${Number(bounty.claimableCount || 0)}项）`, className: 'activity-action-primary' });
+    }
+    await promptMultiSelectModal({
+      title: '每日悬赏',
+      text: summaryLines.length ? summaryLines.join('\n') : '暂无每日悬赏。',
+      options,
+      selectedValues: [],
+      singleSelect: true,
+      submitOnSelect: true,
+      closeOnSelect: true,
+      hideOk: true,
+      cancelText: '关闭',
+      optionsClassName: 'activity-center-options',
+      modalClassName: 'activity-center-prompt',
+      onSelect: () => {
+        if (!socket) return showToast('未连接服务器');
+        socket.emit('daily_bounty_claim', { taskId: 'all' });
+      }
+    });
+  }
+
+  async function showEquipmentCodexModal() {
+    const codex = lastState?.equipment_codex || {};
+    const byRarity = codex.byRarity || {};
+    const bonus = codex.bonus || {};
+    const rarityLines = Object.values(byRarity)
+      .filter((entry) => Number(entry?.total || 0) > 0)
+      .map((entry) => `${entry.label || entry.key}：${Number(entry.unlocked || 0)}/${Number(entry.total || 0)}`);
+    const bonusLines = [
+      bonus.max_hp ? `生命+${bonus.max_hp}` : '',
+      bonus.max_mp ? `魔法+${bonus.max_mp}` : '',
+      bonus.atk ? `攻击+${bonus.atk}` : '',
+      bonus.def ? `防御+${bonus.def}` : '',
+      bonus.mag ? `魔法+${bonus.mag}` : '',
+      bonus.spirit ? `道术+${bonus.spirit}` : '',
+      bonus.mdef ? `魔御+${bonus.mdef}` : '',
+      bonus.dex ? `敏捷+${bonus.dex}` : ''
+    ].filter(Boolean);
+    const recentText = Array.isArray(codex.recent) && codex.recent.length
+      ? codex.recent.map((entry) => entry.name || entry.id).join('、')
+      : '暂无';
+    await noticeModal({
+      title: '装备图鉴',
+      text: [
+        `点亮进度：${Number(codex.unlocked || 0)}/${Number(codex.total || 0)}（${Number(codex.percent || 0)}%）`,
+        `稀有度进度：${rarityLines.join(' / ') || '暂无'}`,
+        `永久加成：${bonusLines.join('、') || '暂无'}`,
+        `最近点亮：${recentText}`
+      ].join('\n')
+    });
+  }
+
   async function showSpecializationModal() {
     const specialization = lastState?.specialization || {};
     const tracks = Array.isArray(specialization.tracks) ? specialization.tracks : [];
@@ -7189,6 +7253,14 @@ async function showCommissionBoardModal() {
     }
     if (action === 'commission_board') {
       void showCommissionBoardModal();
+      return;
+    }
+    if (action === 'daily_bounty') {
+      void showDailyBountyModal();
+      return;
+    }
+    if (action === 'equipment_codex') {
+      void showEquipmentCodexModal();
       return;
     }
     if (action === 'specialization') {
@@ -7308,6 +7380,8 @@ async function showCommissionBoardModal() {
     const lucky = progress.lucky_drop_day || {};
     const harvest = progress.harvest_season || {};
     const commission = progress.commission_board || {};
+    const dailyBounty = progress.daily_bounty || {};
+    const codex = lastState?.equipment_codex || {};
     const harvestChest = harvest.timedChest || {};
     const refine = progress.refine_carnival || {};
     const milestone = refine.milestones || {};
@@ -7332,6 +7406,8 @@ async function showCommissionBoardModal() {
       `活动积分：${Number(currency.activity_points || 0)}（累计获得 ${Number(currency.activity_points_earned || 0)} / 消费 ${Number(currency.activity_points_spent || 0)}）`,
       `丰收季（每日全天）：签到 ${harvest.loginClaimed ? '已领取' : '未领取'} / 赐福 ${formatHarvestBlessingLabel(harvest.blessing, harvest.blessingClaimed)} / 补给 ${harvest.supplyClaimed ? '已领取' : '未领取'} / 宝箱 ${harvestChest.active ? `${harvestChest.name}${harvestChest.claimed ? '（已领）' : '（可领）'}` : `${harvestChest.name || '待开启'} ${harvestChest.startText || ''}${harvestChest.endText ? `-${harvestChest.endText}` : ''}`.trim()} / 挂机 ${Number(harvest.onlineMinutes || 0)} 分钟 / 巡礼 ${Number(harvest.patrolPoints || 0)}（全部统一计入活动积分）`,
       `离线委托：已完成 ${Number(commission.completedCount || 0)}/${Array.isArray(commission.tasks) ? commission.tasks.length : 0} 项，可领取 ${Number(commission.claimableCount || 0)} 项`,
+      `每日悬赏：已完成 ${Number(dailyBounty.completedCount || 0)}/${Array.isArray(dailyBounty.tasks) ? dailyBounty.tasks.length : 0} 项，可领取 ${Number(dailyBounty.claimableCount || 0)} 项`,
+      `装备图鉴：${Number(codex.unlocked || 0)}/${Number(codex.total || 0)}（${Number(codex.percent || 0)}%）`,
       `新手追赶计划（${scheduleText.newbie}）`,
       `双倍秘境（${scheduleText.double}）：${ddMeta.zoneName || doubleDungeon.zoneId || '-'}（击杀 ${Number(doubleDungeon.kills || 0)}）`,
       `世界BOSS悬赏（${scheduleText.bounty}）：${bountyMeta.mobName || bounty.mobId || '-'}（积分 ${Number(bounty.points || 0)} / 击杀 ${Number(bounty.kills || 0)}）`,
@@ -7353,6 +7429,8 @@ async function showCommissionBoardModal() {
         { value: 'harvest_sign', label: '丰收签到', className: 'activity-action-primary' },
         { value: 'harvest_chest', label: '丰收宝箱', className: 'activity-action-primary' },
         { value: 'commission_board', label: '离线委托', className: 'activity-action-primary' },
+        { value: 'daily_bounty', label: '每日悬赏', className: 'activity-action-primary' },
+        { value: 'equipment_codex', label: '装备图鉴', className: 'activity-action-primary' },
         { value: 'specialization', label: '角色专精', className: 'activity-action-primary' },
         { value: 'shop', label: '积分商城', className: 'activity-action-shop' },
         { value: 'beast_exchange', label: '神兽碎片兑换', className: 'activity-action-shop' },
@@ -11441,6 +11519,10 @@ function enterGame(name, options = {}) {
   socket.on('commission_result', (payload) => {
     if (!payload) return;
     noticeModal({ title: '离线委托', text: String(payload.msg || (payload.ok ? '委托奖励已领取。' : '委托奖励领取失败。')) });
+  });
+  socket.on('daily_bounty_result', (payload) => {
+    if (!payload) return;
+    noticeModal({ title: '每日悬赏', text: String(payload.msg || (payload.ok ? '悬赏奖励已领取。' : '悬赏奖励领取失败。')) });
   });
   socket.on('specialization_result', (payload) => {
     if (!payload) return;

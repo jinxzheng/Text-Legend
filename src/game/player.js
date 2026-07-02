@@ -8,6 +8,8 @@ import {
   calcUltimateGrowthBonusPct
 } from './settings.js';
 import { getTreasureBonus, getTreasureRandomAttrBonus, normalizeTreasureState } from './treasure.js';
+import { getEquipmentCodexBonus, recordEquipmentCodexItem } from './collections.js';
+import { recordDailyBountyProgress } from './activity.js';
 import { getCultivationInfo } from './cultivation.js';
 
 const EQUIP_BASE_ROLL_MIN_PCT = 100;
@@ -1263,6 +1265,16 @@ export function computeDerived(player) {
   player.mdef += trainingBonus.mdef + trainingFruitBonus.mdef;
   player.dex += trainingBonus.dex + trainingFruitBonus.dex;
 
+  const codexBonus = getEquipmentCodexBonus(player);
+  player.max_hp += codexBonus.max_hp;
+  player.max_mp += codexBonus.max_mp;
+  player.atk += codexBonus.atk;
+  player.def += codexBonus.def;
+  player.mag += codexBonus.mag;
+  player.spirit += codexBonus.spirit;
+  player.mdef += codexBonus.mdef;
+  player.dex += codexBonus.dex;
+
   player.evadeChance = evadeChance + (player.dex || 0) * 0.0001 + Math.max(0, treasureBonus.evadePct || 0); // 1点敏捷增加0.0001闪避
 
   player.hp = clamp(player.hp, 1, player.max_hp);
@@ -1300,6 +1312,7 @@ export function addItem(player, itemId, qty = 1, effects = null, durability = nu
   }
   
   const isEquipment = itemTemplate && itemTemplate.slot;
+  const codexResult = isEquipment ? recordEquipmentCodexItem(player, itemId) : { unlocked: false };
   
   // 装备类型根据耐久度和锻造等级分开存储，不堆叠
   if (isEquipment) {
@@ -1354,7 +1367,13 @@ export function addItem(player, itemId, qty = 1, effects = null, durability = nu
     }
   }
   
-  return { ok: true };
+  if (codexResult.unlocked) {
+    player.forceStateRefresh = true;
+  }
+  if (isEquipment) {
+    recordDailyBountyProgress(player, 'equipmentLoot', qty);
+  }
+  return { ok: true, codex: codexResult };
 }
 
 

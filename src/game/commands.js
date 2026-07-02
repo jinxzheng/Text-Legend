@@ -34,6 +34,7 @@ import {
   recordRefineActivity,
   recordTreasurePetFestivalActivity
 } from './activity.js';
+import { maybeTriggerMapRandomEvent } from './random_events.js';
 import { clamp, randInt } from './utils.js';
 import { applyDamage } from './combat.js';
 import {
@@ -1915,6 +1916,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const roomName = zone?.rooms[player.position.room]?.name;
       send(`你前往 ${roomName || dirLabel(dir)}。`);
       sendRoomDescription(player, send);
+      maybeTriggerMapRandomEvent(player, { send });
       if (onMove) {
         const toRoom = { zone: player.position.zone, room: player.position.room };
         onMove({ from: fromRoom, to: toRoom });
@@ -2005,6 +2007,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const bossName = room.spawns?.map(id => MOB_TEMPLATES[id]?.name).filter(Boolean).join('、') || 'BOSS';
       send(`你已前往 ${bossName} 的房间。`);
       sendRoomDescription(player, send);
+      maybeTriggerMapRandomEvent(player, { send });
       if (onMove) {
         const toRoom = { zone: player.position.zone, room: player.position.room };
         onMove({ from: fromRoom, to: toRoom });
@@ -2028,6 +2031,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       player.forceStateRefresh = true;
       send(`你前往 ${target.name} 的位置。`);
       sendRoomDescription(player, send);
+      maybeTriggerMapRandomEvent(player, { send });
       console.log('Player moved to:', player.position);
       if (onMove) {
         const toRoom = { zone: player.position.zone, room: player.position.room };

@@ -62,6 +62,12 @@ const COMMISSION_BOARD_TASKS = [
   { id: 'treasure', name: '法宝打磨', desc: '完成 5 次法宝升级/升段', targetKey: 'treasureOps', target: 5, points: 20 },
   { id: 'pet', name: '灵宠照料', desc: '完成 3 次宠物养成', targetKey: 'petOps', target: 3, points: 20 }
 ];
+const DAILY_BOUNTY_TASKS = [
+  { id: 'kill_mobs', name: '清剿妖物', desc: '今日累计击杀 180 只怪物', targetKey: 'mobKills', target: 180, points: 35, gold: 120000, items: [{ id: 'training_fruit', qty: 3 }] },
+  { id: 'kill_bosses', name: '讨伐首领', desc: '今日累计击杀或参与击杀 3 只BOSS', targetKey: 'bossKills', target: 3, points: 45, gold: 160000, items: [{ id: 'treasure_exp_material', qty: 8 }] },
+  { id: 'collect_equips', name: '打宝巡猎', desc: '今日获得 6 件装备', targetKey: 'equipmentLoot', target: 6, points: 35, gold: 100000, items: [{ id: 'pet_training_fruit', qty: 3 }] },
+  { id: 'earn_points', name: '活跃修行', desc: '今日累计获得 60 活动积分', targetKey: 'activityPointsEarned', target: 60, points: 40, gold: 140000, items: [{ id: 'ultimate_growth_stone', qty: 3 }] }
+];
 
 function isHarvestPatrolWindow(now = Date.now()) {
   const t = getChinaDate(now);
@@ -442,10 +448,25 @@ export function normalizeActivityProgress(player, now = Date.now()) {
   if (!ap.commissionBoard.claimed || typeof ap.commissionBoard.claimed !== 'object') {
     ap.commissionBoard.claimed = {};
   }
+  if (!ap.dailyBounty || typeof ap.dailyBounty !== 'object') {
+    ap.dailyBounty = { dateKey: t.dateKey, counters: {}, claimed: {} };
+  }
+  if (ap.dailyBounty.dateKey !== t.dateKey) {
+    ap.dailyBounty = { dateKey: t.dateKey, counters: {}, claimed: {} };
+  }
+  if (!ap.dailyBounty.counters || typeof ap.dailyBounty.counters !== 'object') {
+    ap.dailyBounty.counters = {};
+  }
+  if (!ap.dailyBounty.claimed || typeof ap.dailyBounty.claimed !== 'object') {
+    ap.dailyBounty.claimed = {};
+  }
   ap.commissionBoard.counters.onlineMinutes = Math.max(0, Math.floor(Number(ap.commissionBoard.counters.onlineMinutes || 0)));
   ap.commissionBoard.counters.mobKills = Math.max(0, Math.floor(Number(ap.commissionBoard.counters.mobKills || 0)));
   ap.commissionBoard.counters.treasureOps = Math.max(0, Math.floor(Number(ap.commissionBoard.counters.treasureOps || 0)));
   ap.commissionBoard.counters.petOps = Math.max(0, Math.floor(Number(ap.commissionBoard.counters.petOps || 0)));
+  ['mobKills', 'bossKills', 'equipmentLoot', 'activityPointsEarned'].forEach((key) => {
+    ap.dailyBounty.counters[key] = Math.max(0, Math.floor(Number(ap.dailyBounty.counters[key] || 0)));
+  });
   return ap;
 }
 
@@ -476,6 +497,93 @@ export function getCommissionBoardState(player, now = Date.now()) {
   };
 }
 
+function buildDailyBountyTaskPayload(ap, def) {
+  const progress = Math.max(0, Math.floor(Number(ap?.dailyBounty?.counters?.[def.targetKey] || 0)));
+  const claimed = Boolean(ap?.dailyBounty?.claimed?.[def.id]);
+  const completed = progress >= def.target;
+  return {
+    id: def.id,
+    name: def.name,
+    desc: def.desc,
+    target: def.target,
+    progress,
+    points: def.points,
+    gold: def.gold,
+    items: Array.isArray(def.items) ? def.items.map((entry) => ({ ...entry, name: ITEM_TEMPLATES[entry.id]?.name || entry.id })) : [],
+    claimed,
+    completed,
+    canClaim: completed && !claimed
+  };
+}
+
+export function getDailyBountyState(player, now = Date.now()) {
+  const ap = normalizeActivityProgress(player, now);
+  const tasks = DAILY_BOUNTY_TASKS.map((def) => buildDailyBountyTaskPayload(ap, def));
+  return {
+    dateKey: ap.dailyBounty.dateKey,
+    tasks,
+    claimableCount: tasks.filter((task) => task.canClaim).length,
+    completedCount: tasks.filter((task) => task.claimed).length
+  };
+}
+
+export function recordDailyBountyProgress(player, key, amount = 1, now = Date.now()) {
+  if (!player) return;
+  const safeKey = String(key || '').trim();
+  if (!safeKey) return;
+  const ap = normalizeActivityProgress(player, now);
+  ap.dailyBounty.counters[safeKey] = Math.max(0, Math.floor(Number(ap.dailyBounty.counters[safeKey] || 0))) + Math.max(0, Math.floor(Number(amount || 0)));
+}
+
+export async function claimDailyBountyByMail(player, taskId, {
+  sendMail,
+  realmId = 1,
+  now = Date.now()
+} = {}) {
+  const ap = normalizeActivityProgress(player, now);
+  const key = String(taskId || '').trim();
+  if (!key) return { ok: false, error: '无效悬赏。' };
+  if (typeof sendMail !== 'function') return { ok: false, error: '邮件系统不可用。' };
+  const defs = key === 'all'
+    ? DAILY_BOUNTY_TASKS.filter((def) => buildDailyBountyTaskPayload(ap, def).canClaim)
+    : DAILY_BOUNTY_TASKS.filter((def) => def.id === key && buildDailyBountyTaskPayload(ap, def).canClaim);
+  if (!defs.length) {
+    return { ok: false, error: key === 'all' ? '当前没有可领取的每日悬赏。' : '当前悬赏不可领取。' };
+  }
+  let totalPoints = 0;
+  let totalGold = 0;
+  const itemMap = new Map();
+  defs.forEach((def) => {
+    ap.dailyBounty.claimed[def.id] = true;
+    totalPoints += Math.max(0, Math.floor(Number(def.points || 0)));
+    totalGold += Math.max(0, Math.floor(Number(def.gold || 0)));
+    (def.items || []).forEach((entry) => {
+      const id = String(entry.id || '').trim();
+      if (!id) return;
+      const qty = Math.max(1, Math.floor(Number(entry.qty || 1)));
+      itemMap.set(id, (itemMap.get(id) || 0) + qty);
+    });
+  });
+  const items = Array.from(itemMap.entries()).map(([id, qty]) => ({ id, qty }));
+  try {
+    await sendMail(
+      player.userId,
+      player.name,
+      '系统',
+      null,
+      '每日悬赏奖励',
+      `完成每日悬赏：${defs.map((def) => def.name).join('、')}。\n奖励：${totalGold} 金币、活动积分 ${totalPoints}${items.length ? `、${items.map((entry) => `${ITEM_TEMPLATES[entry.id]?.name || entry.id}x${entry.qty}`).join('、')}` : ''}`,
+      items,
+      totalGold,
+      realmId
+    );
+    if (totalPoints > 0) addActivityPoints(player, totalPoints, now);
+    return { ok: true, points: totalPoints, gold: totalGold, items, taskIds: defs.map((def) => def.id) };
+  } catch (err) {
+    return { ok: false, error: err?.message || '邮件发送失败。' };
+  }
+}
+
 export function claimCommissionTask(player, taskId, now = Date.now()) {
   const ap = normalizeActivityProgress(player, now);
   const key = String(taskId || '').trim();
@@ -503,6 +611,7 @@ export function recordCommissionMobKill(player, amount = 1, now = Date.now()) {
   if (!player) return;
   const ap = normalizeActivityProgress(player, now);
   ap.commissionBoard.counters.mobKills = Math.max(0, Math.floor(Number(ap.commissionBoard.counters.mobKills || 0))) + Math.max(0, Math.floor(Number(amount || 0)));
+  recordDailyBountyProgress(player, 'mobKills', amount, now);
 }
 
 export function recordCommissionTreasureOps(player, amount = 1, now = Date.now()) {
@@ -528,6 +637,7 @@ export function addActivityPoints(player, amount, now = Date.now()) {
   if (gain <= 0) return { ok: true, amount: 0, balance: Number(ap.activityPoints || 0) };
   ap.activityPoints = Math.max(0, Math.floor(Number(ap.activityPoints || 0))) + gain;
   ap.activityPointsEarned = Math.max(0, Math.floor(Number(ap.activityPointsEarned || 0))) + gain;
+  recordDailyBountyProgress(player, 'activityPointsEarned', gain, now);
   return { ok: true, amount: gain, balance: ap.activityPoints };
 }
 
@@ -793,6 +903,7 @@ export function getActivityStatePayload(player, now = Date.now()) {
         timedChest: getHarvestTimedChestState(ap, now)
       },
       commission_board: getCommissionBoardState(player, now),
+      daily_bounty: getDailyBountyState(player, now),
       refine_carnival: {
         attempts: Number(ap.refineCarnival?.attempts || 0),
         milestones: ap.refineCarnival?.milestones || {}

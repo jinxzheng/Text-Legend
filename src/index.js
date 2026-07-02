@@ -149,6 +149,8 @@ import { listWorldZoneOverrides, listWorldRoomOverrides, getWorldZoneOverride, g
 import { runMigrations } from './db/migrate.js';
 import { getSmtpSettings, saveSmtpSettings, testSmtpConnection, sendPasswordResetEmail } from './db/smtp.js';
 import { newCharacter, computeDerived, gainExp, addItem, removeItem, getItemKey, normalizeInventory, normalizeEquipment, getDurabilityMax, getRepairCost, buildSpecializationPayload, SPECIALIZATION_DEFS } from './game/player.js';
+import { buildEquipmentCodexPayload } from './game/collections.js';
+import { maybeTriggerMapRandomEvent } from './game/random_events.js';
 import {
   handleCommand,
   awardKill,
@@ -170,6 +172,8 @@ import {
   claimHarvestSupplyByMail,
   claimHarvestTimedChestByMail,
   claimCommissionTask,
+  claimDailyBountyByMail,
+  recordDailyBountyProgress,
   normalizeHarvestSeasonRewardConfig,
   setHarvestSeasonRewardConfig,
   normalizeHarvestSeasonSignConfig,
@@ -305,6 +309,14 @@ async function autoClaimActivityRewardsForPlayer(player, now = Date.now()) {
       now
     });
     if (result?.ok && Number(result?.sent || 0) > 0) {
+      player.forceStateRefresh = true;
+    }
+    const bountyResult = await claimDailyBountyByMail(player, 'all', {
+      sendMail,
+      realmId: player.realmId || 1,
+      now
+    });
+    if (bountyResult?.ok) {
       player.forceStateRefresh = true;
     }
   } catch (_) {
@@ -11995,6 +12007,7 @@ function tryAutoFullBossMove(player) {
       player.flags.autoFullCrossBossBlockedId = null;
     }
     player.flags.autoFullLastMoveAt = now;
+    maybeTriggerMapRandomEvent(player, { send: (message) => notifyPlayerIfPossible(player, message), now });
     return 'moved';
   }
   return null;
@@ -12125,6 +12138,7 @@ function tryAutoFullAction(player, roomMobs) {
       if (movePlayerToRoom(player, targetZoneId, targetRoomId)) {
         player.flags.autoFullLastMoveAt = now;
         player.flags.autoFullRepathAfterDeath = false;
+        maybeTriggerMapRandomEvent(player, { send: (message) => notifyPlayerIfPossible(player, message), now });
         return 'moved';
       }
     }
@@ -12175,11 +12189,22 @@ function tryAutoFullAction(player, roomMobs) {
     if (player.position.zone !== targetZoneId || player.position.room !== targetRoomId) {
       if (movePlayerToRoom(player, targetZoneId, targetRoomId)) {
         player.flags.autoFullLastMoveAt = now;
+        maybeTriggerMapRandomEvent(player, { send: (message) => notifyPlayerIfPossible(player, message), now });
         return 'moved';
       }
     }
   }
   return null;
+}
+
+function notifyPlayerIfPossible(player, message) {
+  if (player && typeof player.send === 'function') {
+    try {
+      player.send(message);
+    } catch {
+      // ignore notification failures for managed/offline players
+    }
+  }
 }
 
 function pickPlayerBonusConfig(playerBonusConfig, playerCount) {
@@ -16357,6 +16382,7 @@ async function buildState(player, options = {}) {
     online: { count: onlineCount },
     ...(dailyLuckyInfo ? { daily_lucky: dailyLuckyInfo } : {}),
     activities: getActivityStatePayload(player),
+    equipment_codex: buildEquipmentCodexPayload(player),
     zhuxian_tower: {
       highestClearedFloor: Math.max(0, Math.floor(Number(zhuxianTowerProgress.highestClearedFloor || 0))),
       currentChallengeFloor: Math.max(1, Math.floor(Number(zhuxianTowerProgress.highestClearedFloor || 0)) + 1),
@@ -19496,6 +19522,27 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('daily_bounty_claim', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    const { clean } = sanitizePayload(payload, ['taskId'], 'daily_bounty_claim');
+    const taskId = String(clean?.taskId || '').trim().toLowerCase() || 'all';
+    const result = await claimDailyBountyByMail(player, taskId, {
+      sendMail,
+      realmId: player.realmId || 1
+    });
+    player.forceStateRefresh = true;
+    await sendState(player);
+    await savePlayer(player, { immediate: true });
+    socket.emit('daily_bounty_result', {
+      ok: Boolean(result.ok),
+      msg: result.ok
+        ? `每日悬赏奖励已发送到邮件：活动积分 +${Math.max(0, Math.floor(Number(result.points || 0)))}，金币 ${Math.max(0, Math.floor(Number(result.gold || 0)))}。`
+        : (result.error || '每日悬赏领取失败。'),
+      taskIds: result.taskIds || []
+    });
+  });
+
   socket.on('specialization_set', async (payload) => {
     const player = players.get(socket.id);
     if (!player) return;
@@ -20546,6 +20593,9 @@ async function processMobDeath(player, mob, online) {
     lootOwner = playersByName(ownerName, roomRealmId) || player;
     partyMembersForReward = [lootOwner];
     partyMembersForLoot = [lootOwner];
+  }
+  if (isBoss) {
+    partyMembersForReward.forEach((member) => recordDailyBountyProgress(member, 'bossKills', 1));
   }
   const eligibleCount = hasParty ? 1 : partyMembersForReward.length;
   const bonus = totalPartyCount > 1 ? Math.min(0.2 * totalPartyCount, 1.0) : 0;
