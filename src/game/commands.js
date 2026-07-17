@@ -15,6 +15,7 @@ import {
 } from './skills.js';
 import { addItem, addItemToList, removeItem, removeItemFromList, equipItem, unequipItem, bagLimit, gainExp, computeDerived, getDurabilityMax, getRepairCost, getItemKey, sameEffects } from './player.js';
 import { CLASSES, expForLevel, getStartPosition, ROOM_VARIANT_COUNT } from './constants.js';
+import { CULTIVATION_RANKS, getCultivationInfo, getCultivationBreakthroughCost, formatCultivationEffectSummary } from './cultivation.js';
 import { getRoom, getAliveMobs, spawnMobs } from './state.js';
 import {
   getActivityChatLines,
@@ -33,6 +34,7 @@ import {
   recordRefineActivity,
   recordTreasurePetFestivalActivity
 } from './activity.js';
+import { maybeTriggerMapRandomEvent } from './random_events.js';
 import { clamp, randInt } from './utils.js';
 import { applyDamage } from './combat.js';
 import {
@@ -71,6 +73,25 @@ import {
 
 // 特效重置：生成随机特效（不包含elementAtk，因为元素攻击只能通过装备合成获得）
 const ALLOWED_EFFECTS = ['combo', 'fury', 'unbreakable', 'defense', 'dodge', 'poison', 'healblock'];
+const EQUIPMENT_AFFIX_DEFS = Object.freeze([
+  { attr: 'hp', label: '生命', min: 80, max: 180 },
+  { attr: 'mp', label: '魔法值', min: 50, max: 140 },
+  { attr: 'atk', label: '攻击', min: 8, max: 24 },
+  { attr: 'def', label: '防御', min: 8, max: 24 },
+  { attr: 'mag', label: '魔法', min: 8, max: 24 },
+  { attr: 'mdef', label: '魔御', min: 8, max: 24 },
+  { attr: 'spirit', label: '道术', min: 8, max: 24 },
+  { attr: 'dex', label: '敏捷', min: 5, max: 16 }
+]);
+const EQUIPMENT_AFFIX_RARITY_MULTIPLIER = Object.freeze({
+  common: 1,
+  uncommon: 1.2,
+  rare: 1.5,
+  epic: 2,
+  legendary: 2.8,
+  supreme: 3.8,
+  ultimate: 5
+});
 const AUTO_FULL_TRIAL_MS = 10 * 60 * 1000;
 
 function describeHarvestSignRewardText() {
@@ -581,34 +602,6 @@ function getAutoFullTrialInfo(player, now = Date.now()) {
   return { available: false, remainingMs: 0 };
 }
 
-const CULTIVATION_RANKS = [
-  '筑基',
-  '灵虚',
-  '和合',
-  '元婴',
-  '空冥',
-  '履霜',
-  '渡劫',
-  '寂灭',
-  '大乘',
-  '上仙',
-  '真仙',
-  '天仙',
-  '声闻',
-  '缘觉',
-  '菩萨',
-  '佛'
-];
-
-function getCultivationInfo(levelValue) {
-  const level = Math.floor(Number(levelValue ?? -1));
-  if (Number.isNaN(level) || level < 0) return { name: '无', bonus: 0, idx: -1 };
-  const idx = Math.min(CULTIVATION_RANKS.length - 1, level);
-  const name = CULTIVATION_RANKS[idx] || CULTIVATION_RANKS[0];
-  const bonus = (idx + 1) * 100;
-  return { name, bonus, idx };
-}
-
 function generateRandomEffects(count, options = {}) {
   const effects = {};
   const excludeSet = new Set(Array.isArray(options.exclude) ? options.exclude : []);
@@ -620,6 +613,42 @@ function generateRandomEffects(count, options = {}) {
     available.splice(randomIndex, 1);
   }
   return Object.keys(effects).length > 0 ? effects : null;
+}
+
+function rollEffectResetCount() {
+  const quintupleEffect = Math.random() * 100 < getEffectResetQuintupleRate();
+  const quadrupleEffect = Math.random() * 100 < getEffectResetQuadrupleRate();
+  const tripleEffect = Math.random() * 100 < getEffectResetTripleRate();
+  const doubleEffect = Math.random() * 100 < getEffectResetDoubleRate();
+  if (quintupleEffect) return 5;
+  if (quadrupleEffect) return 4;
+  if (tripleEffect) return 3;
+  if (doubleEffect) return 2;
+  return 1;
+}
+
+function generateEquipmentAffixes(item, count) {
+  const rarity = rarityByPrice(item);
+  const multiplier = EQUIPMENT_AFFIX_RARITY_MULTIPLIER[rarity] || 1;
+  const pool = [...EQUIPMENT_AFFIX_DEFS];
+  const affixes = [];
+  for (let i = 0; i < count && pool.length > 0; i++) {
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    const def = pool[randomIndex];
+    pool.splice(randomIndex, 1);
+    const baseValue = def.min + Math.floor(Math.random() * (def.max - def.min + 1));
+    affixes.push({
+      attr: def.attr,
+      label: def.label,
+      value: Math.max(1, Math.floor(baseValue * multiplier))
+    });
+  }
+  return affixes;
+}
+
+function formatEquipmentAffixes(affixes) {
+  if (!Array.isArray(affixes) || affixes.length === 0) return '无';
+  return affixes.map((affix) => `${affix.label || affix.attr}+${Math.floor(Number(affix.value || 0))}`).join('、');
 }
 
 function hasEffectResetMaterialEffects(effects) {
@@ -1286,7 +1315,7 @@ function formatStats(player, partyApi) {
     `攻击: ${Math.floor(player.atk)} 防御: ${Math.floor(player.def)} 魔法: ${Math.floor(player.mag)}`,
     `金币: ${player.gold}`,
     cultivationInfo.bonus > 0
-      ? `修真: ${cultivationInfo.name}（所有属性+${cultivationInfo.bonus}）`
+      ? `修真: ${cultivationInfo.name}（${formatCultivationEffectSummary(cultivationLevel)}）`
       : '修真: 无',
     `PK值: ${pkValue} (${isRedName(player) ? '红名' : '正常'})`,
     `VIP: ${vip}`,
@@ -1942,6 +1971,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const roomName = zone?.rooms[player.position.room]?.name;
       send(`你前往 ${roomName || dirLabel(dir)}。`);
       sendRoomDescription(player, send);
+      maybeTriggerMapRandomEvent(player, { send });
       if (onMove) {
         const toRoom = { zone: player.position.zone, room: player.position.room };
         onMove({ from: fromRoom, to: toRoom });
@@ -2032,6 +2062,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const bossName = room.spawns?.map(id => MOB_TEMPLATES[id]?.name).filter(Boolean).join('、') || 'BOSS';
       send(`你已前往 ${bossName} 的房间。`);
       sendRoomDescription(player, send);
+      maybeTriggerMapRandomEvent(player, { send });
       if (onMove) {
         const toRoom = { zone: player.position.zone, room: player.position.room };
         onMove({ from: fromRoom, to: toRoom });
@@ -2055,6 +2086,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       player.forceStateRefresh = true;
       send(`你前往 ${target.name} 的位置。`);
       sendRoomDescription(player, send);
+      maybeTriggerMapRandomEvent(player, { send });
       console.log('Player moved to:', player.position);
       if (onMove) {
         const toRoom = { zone: player.position.zone, room: player.position.room };
@@ -4583,7 +4615,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       if (source !== 'ui') return;
       const cfg = getUltimateGrowthConfig();
       if (!cfg?.enabled) return send('终极装备成长系统未开启。');
-      if (!args) return send('用法：growth <装备Key|equip:部位> [次数]');
+      if (!args) return send('用法：growth <装备Key|equip:部位|petequip:宠物ID:部位> [次数]');
       const parts = String(args || '').trim().split(/\s+/).filter(Boolean);
       const targetRaw = parts[0];
       const timesRaw = parts[1];
@@ -4600,11 +4632,18 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       let targetItem = null;
       let fromEquip = false;
       let equipSlotName = null;
+      let petEquipResolved = null;
       if (targetRaw.startsWith('equip:')) {
         equipSlotName = targetRaw.slice('equip:'.length).trim();
         targetSlot = player.equipment?.[equipSlotName] || null;
         if (!targetSlot || !targetSlot.id) return send('身上没有该装备。');
         targetItem = ITEM_TEMPLATES[targetSlot.id] || null;
+        fromEquip = true;
+      } else if (targetRaw.startsWith('petequip:')) {
+        petEquipResolved = resolvePetEquippedItem(player, targetRaw);
+        if (!petEquipResolved || petEquipResolved.error) return send(petEquipResolved?.error || '宠物装备无效。');
+        targetSlot = petEquipResolved.slot;
+        targetItem = petEquipResolved.item;
         fromEquip = true;
       } else {
         const resolved = resolveInventoryItem(player, targetRaw);
@@ -4698,7 +4737,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
 
       targetSlot.growth_level = currentLevel;
       targetSlot.growth_fail_stack = failStack;
-      if (fromEquip) computeDerived(player);
+      if (fromEquip || petEquipResolved) computeDerived(player);
       player.forceStateRefresh = true;
       const previewLevel = hasMaxLevel ? Math.min(currentLevel + 1, maxLevel) : (currentLevel + 1);
       const rateText = Math.max(0, Math.min(100, Number(getUltimateGrowthRateByLevel(previewLevel) || 0)));
@@ -4778,23 +4817,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
 
       // 判断获得几条特效（从高到低依次判断，避免重复触发）
       let effectCount = 0;
+      let affixCount = 0;
       if (success) {
-        const quintupleEffect = Math.random() * 100 < getEffectResetQuintupleRate();
-        const quadrupleEffect = Math.random() * 100 < getEffectResetQuadrupleRate();
-        const tripleEffect = Math.random() * 100 < getEffectResetTripleRate();
-        const doubleEffect = Math.random() * 100 < getEffectResetDoubleRate();
-
-        if (quintupleEffect) {
-          effectCount = 5;
-        } else if (quadrupleEffect) {
-          effectCount = 4;
-        } else if (tripleEffect) {
-          effectCount = 3;
-        } else if (doubleEffect) {
-          effectCount = 2;
-        } else {
-          effectCount = 1;
-        }
+        effectCount = rollEffectResetCount();
+        affixCount = rollEffectResetCount();
       }
 
       // 保存主件原有特效（失败时保留）
@@ -4821,20 +4847,25 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         if (originalSkill) {
           newEffects.skill = originalSkill;
         }
+        const affixes = generateEquipmentAffixes(mainItem, affixCount);
+        if (affixes.length > 0) {
+          newEffects.affixes = affixes;
+        }
+        const affixText = `，词条${affixes.length}条：${formatEquipmentAffixes(affixes)}`;
         if (effectCount === 5) {
-          send(`特效重置成功！${mainItem.name} 获得5条新特效！`);
+          send(`特效重置成功！${mainItem.name} 获得5条新特效${affixText}！`);
           emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得5条新特效！`, 'announce', null);
         } else if (effectCount === 4) {
-          send(`特效重置成功！${mainItem.name} 获得4条新特效！`);
+          send(`特效重置成功！${mainItem.name} 获得4条新特效${affixText}！`);
           emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得4条新特效！`, 'announce', null);
         } else if (effectCount === 3) {
-          send(`特效重置成功！${mainItem.name} 获得3条新特效！`);
+          send(`特效重置成功！${mainItem.name} 获得3条新特效${affixText}！`);
           emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得3条新特效！`, 'announce', null);
         } else if (effectCount === 2) {
-          send(`特效重置成功！${mainItem.name} 获得2条新特效！`);
+          send(`特效重置成功！${mainItem.name} 获得2条新特效${affixText}！`);
           emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得2条新特效！`, 'announce', null);
         } else {
-          send(`特效重置成功！${mainItem.name} 获得1条新特效。`);
+          send(`特效重置成功！${mainItem.name} 获得1条新特效${affixText}。`);
           emitAnnouncement(`恭喜玩家 ${player.name} 的 ${mainItem.name} 特效重置成功，获得1条新特效！`, 'announce', null);
         }
       } else {
@@ -4869,7 +4900,7 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       // 系统日志
       if (logLoot) {
         if (success) {
-          logLoot(`[effect] ${player.name} 特效重置成功 ${mainItem.name} ${effectCount}条`);
+          logLoot(`[effect] ${player.name} 特效重置成功 ${mainItem.name} ${effectCount}条 词条${affixCount}条`);
         } else {
           logLoot(`[effect] ${player.name} 特效重置失败 ${mainItem.name}`);
         }
@@ -5068,19 +5099,20 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       const current = Math.floor(Number(player.flags.cultivationLevel ?? -1));
       const currentInfo = getCultivationInfo(current);
       const maxLevel = CULTIVATION_RANKS.length - 1;
-      const costLevels = 200;
       const nextLevel = current + 1;
-      const requiresRebirthStone = nextLevel >= 12; // 声闻、缘觉、菩萨、佛
+      const nextCost = getCultivationBreakthroughCost(nextLevel);
+      const costLevels = nextCost.levelCost;
+      const rebirthStoneCost = nextCost.rebirthStoneCost;
       if (current >= maxLevel) {
-        send(`修真已达最高：${currentInfo.name} (+${currentInfo.bonus})。`);
+        send(`修真已达最高：${currentInfo.name}（${formatCultivationEffectSummary(current)}）。`);
         return;
       }
-      if (requiresRebirthStone) {
+      if (rebirthStoneCost > 0) {
         const needItemId = 'cultivation_rebirth_stone';
         const owned = Number((player.inventory || []).find((i) => i && i.id === needItemId)?.qty || 0);
-        if (owned < 1) {
+        if (owned < rebirthStoneCost) {
           const nextInfoPreview = getCultivationInfo(nextLevel);
-          send(`突破至 ${nextInfoPreview.name} 需要 修真转生石 x1（跨服BOSS掉落）。`);
+          send(`突破至 ${nextInfoPreview.name} 需要 修真转生石 x${rebirthStoneCost}。`);
           return;
         }
       }
@@ -5088,10 +5120,10 @@ export async function handleCommand({ player, players, allCharacters, playersByN
         send(`等级不足。提升修真需要扣除 ${costLevels} 级，当前等级 ${player.level}。`);
         return;
       }
-      if (requiresRebirthStone) {
-        const removed = removeItem(player, 'cultivation_rebirth_stone', 1);
+      if (rebirthStoneCost > 0) {
+        const removed = removeItem(player, 'cultivation_rebirth_stone', rebirthStoneCost);
         if (!removed) {
-          send('缺少修真转生石 x1。');
+          send(`缺少修真转生石 x${rebirthStoneCost}。`);
           return;
         }
       }
@@ -5103,8 +5135,8 @@ export async function handleCommand({ player, players, allCharacters, playersByN
       computeDerived(player);
       player.forceStateRefresh = true;
       await savePlayer(player, { immediate: true, dirty: ['base', 'flags'] });
-      const stoneText = requiresRebirthStone ? '、修真转生石 x1' : '';
-      send(`修真提升至 ${nextInfo.name} (+${nextInfo.bonus})，消耗等级 ${costLevels}${stoneText}，等级重置为1。`);
+      const stoneText = rebirthStoneCost > 0 ? `、修真转生石 x${rebirthStoneCost}` : '';
+      send(`修真提升至 ${nextInfo.name}（${formatCultivationEffectSummary(player.flags.cultivationLevel)}），消耗等级 ${costLevels}${stoneText}，等级重置为1。`);
       return;
     }
     case 'party': {

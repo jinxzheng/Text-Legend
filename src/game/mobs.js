@@ -895,7 +895,6 @@ export const MOB_TEMPLATES = {
     specialBoss: true,
     respawnMs: 1 * 60 * 60 * 1000,
     drops: [
-      { id: 'cultivation_rebirth_stone', chance: 0.08 },
       { id: 'kaitian', chance: 0.015 },
       { id: 'zhentian', chance: 0.015 },
       { id: 'xuantian', chance: 0.015 },
@@ -2219,7 +2218,13 @@ const EXTRA_CULTIVATION_TIERS = [
   { slug: 'shengwen', name: '声闻', levelIndex: 12 },
   { slug: 'yuanjue', name: '缘觉', levelIndex: 13 },
   { slug: 'pusa', name: '菩萨', levelIndex: 14 },
-  { slug: 'fo', name: '佛', levelIndex: 15 }
+  { slug: 'fo', name: '佛', levelIndex: 15 },
+  { slug: 'luohan', name: '罗汉', levelIndex: 16 },
+  { slug: 'jinshen', name: '金身', levelIndex: 17 },
+  { slug: 'zunzhe', name: '尊者', levelIndex: 18 },
+  { slug: 'shengwang', name: '圣王', levelIndex: 19 },
+  { slug: 'daozu', name: '道祖', levelIndex: 20 },
+  { slug: 'hunyuan', name: '混元', levelIndex: 21 }
 ];
 
 function cloneMobTemplate(template) {

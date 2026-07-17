@@ -1,3 +1,5 @@
+import { timestampDefault } from '../time.js';
+
 export async function up(knex) {
   await knex.schema.table('characters', (t) => {
     t.integer('yuanbao').notNullable().defaultTo(0);
@@ -19,7 +21,7 @@ export async function up(knex) {
     t.integer('used_by_user_id').nullable();
     t.string('used_by_char_name', 64).nullable();
     t.timestamp('used_at').nullable();
-    t.timestamp('created_at').defaultTo(knex.fn.now());
+    t.timestamp('created_at').defaultTo(timestampDefault(knex));
   });
 }
 

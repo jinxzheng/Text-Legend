@@ -92,7 +92,8 @@ data class GameState(
     val auto_full_boss_list: List<String> = emptyList(),
     val treasure: TreasureStateInfo? = null,
     val pet: PetState? = null,
-    val activities: JsonElement? = null
+    val activities: JsonElement? = null,
+    val equipment_codex: JsonElement? = null
 )
 
 @Serializable
@@ -380,6 +381,8 @@ data class StatsInfo(
     val dodge: Int = 0,
     val cultivation_level: Int = -1,
     val cultivation_bonus: Int = 0,
+    val cultivation_name: String = "",
+    val cultivation_is_max: Boolean = false,
     val autoSkillId: JsonElement? = null,
     val autoFullEnabled: Boolean = false,
     val autoFullTrialAvailable: Boolean = false,
@@ -765,7 +768,9 @@ data class PetEquippedItem(
     val effects: JsonObject? = null,
     val durability: Int? = null,
     val max_durability: Int? = null,
-    val base_roll_pct: Int? = null
+    val base_roll_pct: Int? = null,
+    val growth_level: Int = 0,
+    val growth_fail_stack: Int = 0
 )
 
 @Serializable

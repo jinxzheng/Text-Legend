@@ -240,6 +240,10 @@ class SocketManager(private val json: Json) {
                 val payload = args.firstOrNull() as? JSONObject ?: return@on
                 runCatching { onActivityDivineBeastExchangeData(json.decodeFromString(ActivityDivineBeastExchangePayload.serializer(), payload.toString())) }
             }
+            on("daily_bounty_result") { args ->
+                val payload = args.firstOrNull() as? JSONObject ?: return@on
+                runCatching { onSimpleResult(json.decodeFromString(SimpleResult.serializer(), payload.toString())) }
+            }
             connect()
         }
     }
@@ -265,6 +269,12 @@ class SocketManager(private val json: Json) {
         }
         // antiKey 校验已禁用
         socket?.emit("cmd", payload)
+    }
+
+    fun dailyBountyClaim(taskId: String = "all") {
+        socket?.emit("daily_bounty_claim", JSONObject().apply {
+            put("taskId", taskId.ifBlank { "all" })
+        })
     }
 
     private fun enqueueCmd(text: String) {

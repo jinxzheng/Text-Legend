@@ -904,17 +904,17 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
 /* 活动积分商城表格：物品列更紧凑、积分列更宽 */
 .compact-config-table-container table.activity-point-shop-table th:nth-child(1),
 .compact-config-table-container table.activity-point-shop-table td:nth-child(1) {
-  width: 52%;
+  width: 50%;
 }
 
 .compact-config-table-container table.activity-point-shop-table th:nth-child(2),
 .compact-config-table-container table.activity-point-shop-table td:nth-child(2) {
-  width: 30%;
+  width: 28%;
 }
 
 .compact-config-table-container table.activity-point-shop-table th:nth-child(3),
 .compact-config-table-container table.activity-point-shop-table td:nth-child(3) {
-  width: 18%;
+  width: 22%;
 }
 
 .compact-config-table-container table.activity-point-shop-table td:nth-child(1) select {
@@ -924,6 +924,24 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
 
 .compact-config-table-container table.activity-point-shop-table td:nth-child(2) input[type='number'] {
   min-width: 72px;
+}
+
+.activity-point-shop-cost-cell {
+  display: grid;
+  grid-template-columns: minmax(72px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.activity-point-shop-cost-cell input[type='number'] {
+  min-width: 72px;
+}
+
+.activity-point-shop-del-btn {
+  min-width: 52px;
+  padding-left: 10px;
+  padding-right: 10px;
+  white-space: nowrap;
 }
 
 .equipment-recycle-config-container {
@@ -1455,6 +1473,37 @@ body.theme-dark .admin-switch input:checked + .admin-switch-slider {
   width: 100%;
 }
 
+body.theme-dark .compact-config-table-container table.harvest-reward-table .harvest-reward-cell {
+  background: #21170f;
+  color: #efe2d2;
+}
+
+body.theme-dark .compact-config-table-container table.harvest-reward-table tbody tr,
+body.theme-dark .compact-config-table-container table.harvest-reward-table tbody tr:hover,
+body.theme-dark .compact-config-table-container table.harvest-reward-table tbody td {
+  background: #21170f;
+  color: #efe2d2;
+}
+
+body.theme-dark .compact-config-table-container table.harvest-reward-table .harvest-reward-grid {
+  background: transparent;
+}
+
+body.theme-dark .compact-config-table-container table.harvest-reward-table .harvest-reward-label {
+  color: #c8a06f;
+}
+
+body.theme-dark .compact-config-table-container table.harvest-reward-table input,
+body.theme-dark .compact-config-table-container table.harvest-reward-table select {
+  background: #1a110c;
+  border-color: #3f2a1b;
+  color: #f3e3cf;
+}
+
+body.theme-dark .compact-config-table-container table.harvest-reward-table input::placeholder {
+  color: #806f5f;
+}
+
 .char-migrate-pair-row {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);
@@ -1982,8 +2031,23 @@ body.theme-dark thead th {
 }
 
 body.theme-dark tbody td {
+  background: #1f1814;
   border-color: #3c2b1d;
   color: #d4c8b8;
+}
+
+body.theme-dark tbody tr,
+body.theme-dark tbody tr:hover {
+  background: #1f1814;
+}
+
+body.theme-dark .compact-config-table-container tbody td {
+  background: #21170f;
+}
+
+body.theme-dark .compact-config-table-container tbody tr,
+body.theme-dark .compact-config-table-container tbody tr:hover {
+  background: #21170f;
 }
 
 /* 暗黑模式下的掉落表格 */
@@ -2103,3 +2167,286 @@ body.theme-dark thead {
   }
 }
 
+
+body.theme-dark table tbody tr,
+body.theme-dark table tbody tr:hover,
+body.theme-dark table tbody tr:hover td,
+body.theme-dark table tbody td {
+  background-color: #1f1814;
+  border-color: #3c2b1d;
+  color: #d4c8b8;
+}
+
+body.theme-dark .compact-config-table-container table tbody tr,
+body.theme-dark .compact-config-table-container table tbody tr:hover,
+body.theme-dark .compact-config-table-container table tbody tr:hover td,
+body.theme-dark .compact-config-table-container table tbody td {
+  background-color: #21170f;
+}
+
+body.theme-dark table tbody td[colspan] {
+  color: #9f9284 !important;
+}
+
+body.theme-dark .admin-switch-slider,
+body.theme-dark .toggle-slider {
+  background: #26190f;
+  border-color: #8f5a2a;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+body.theme-dark .admin-switch-slider::before,
+body.theme-dark .toggle-slider::before {
+  background: #d7b17f;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+body.theme-dark .admin-switch input:checked + .admin-switch-slider,
+body.theme-dark .toggle-switch input:checked + .toggle-slider {
+  background: #a46025;
+  border-color: #d88b40;
+}
+
+body.theme-dark .admin-switch input:checked + .admin-switch-slider::before,
+body.theme-dark .toggle-switch input:checked + .toggle-slider::before {
+  background: #fff0d5;
+}
+
+body.theme-dark input[type='number'] {
+  color-scheme: dark;
+}
+
+body.theme-dark input[type='number']::-webkit-inner-spin-button,
+body.theme-dark input[type='number']::-webkit-outer-spin-button {
+  opacity: 1;
+  filter: invert(0.82) sepia(0.18) saturate(1.4) hue-rotate(350deg) brightness(0.92);
+}
+
+.harvest-season-reward-container {
+  overflow-x: auto;
+}
+
+.compact-config-table-container table.harvest-season-reward-table {
+  min-width: 760px;
+  table-layout: fixed;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th,
+.compact-config-table-container table.harvest-season-reward-table td {
+  padding: 6px 8px;
+  vertical-align: middle;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th:nth-child(1),
+.compact-config-table-container table.harvest-season-reward-table td:nth-child(1) {
+  width: 88px;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th:nth-child(2),
+.compact-config-table-container table.harvest-season-reward-table td:nth-child(2) {
+  width: 24%;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th:nth-child(3),
+.compact-config-table-container table.harvest-season-reward-table td:nth-child(3) {
+  width: 120px;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th:nth-child(4),
+.compact-config-table-container table.harvest-season-reward-table td:nth-child(4) {
+  width: 34%;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th:nth-child(5),
+.compact-config-table-container table.harvest-season-reward-table td:nth-child(5) {
+  width: 76px;
+}
+
+.compact-config-table-container table.harvest-season-reward-table th:nth-child(6),
+.compact-config-table-container table.harvest-season-reward-table td:nth-child(6) {
+  width: 72px;
+  text-align: center;
+}
+
+.compact-config-table-container table.harvest-season-reward-table input,
+.compact-config-table-container table.harvest-season-reward-table select {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 5px 8px;
+}
+
+.compact-config-table-container table.harvest-season-reward-table .harvest-threshold-input,
+.compact-config-table-container table.harvest-season-reward-table .harvest-qty-input {
+  text-align: center;
+}
+
+.compact-config-table-container table.harvest-season-reward-table .btn-small {
+  margin: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .compact-config-table-container table.harvest-season-reward-table {
+    min-width: 680px;
+  }
+}
+
+.admin-link-button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.admin-link-button:hover {
+  color: #e79a4f;
+}
+
+.admin-detail-modal.hidden {
+  display: none;
+}
+
+.admin-detail-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.admin-detail-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 5, 3, 0.72);
+  backdrop-filter: blur(4px);
+}
+
+.admin-detail-panel {
+  position: relative;
+  width: min(1120px, 96vw);
+  max-height: 88vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #21170f;
+  border: 1px solid #5a3b21;
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+  color: #ead8bd;
+}
+
+.admin-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #3a2b1f;
+}
+
+.admin-detail-head h2 {
+  margin: 0;
+}
+
+.admin-detail-body {
+  padding: 16px 18px 22px;
+  overflow: auto;
+}
+
+.admin-user-summary,
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 14px;
+}
+
+.admin-user-summary {
+  padding: 12px;
+  margin-bottom: 14px;
+  background: rgba(255, 248, 237, 0.04);
+  border: 1px solid #3a2b1f;
+  border-radius: 10px;
+}
+
+.admin-character-card {
+  padding: 14px;
+  margin-top: 14px;
+  border: 1px solid #3a2b1f;
+  border-radius: 10px;
+  background: rgba(15, 10, 7, 0.35);
+}
+
+.admin-character-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: #f5d5a8;
+}
+
+.admin-character-card h3 {
+  margin: 14px 0 8px;
+  color: #e79a4f;
+  font-size: 0.98rem;
+}
+
+.admin-equipment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 8px;
+}
+
+.admin-equipment-grid > div,
+.admin-pet-row,
+.admin-item-chip {
+  border: 1px solid #3a2b1f;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 248, 237, 0.035);
+}
+
+.admin-equipment-grid b {
+  display: block;
+  color: #cfa675;
+  margin-bottom: 4px;
+}
+
+.admin-item-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+
+.admin-item-name {
+  display: block;
+  color: #f0d4ad;
+}
+
+.admin-item-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: #9f9284;
+}
+
+.admin-pet-row {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.admin-pet-equips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  color: #c9b394;
+  font-size: 13px;
+}

@@ -1601,11 +1601,22 @@ private fun formatPetEffectInline(effects: JsonObject?): String {
     val parts = mutableListOf<String>()
     val elementAtk = effects["elementAtk"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull()?.toInt() ?: 0
     if (elementAtk > 0) parts += "元素+$elementAtk"
-    val keys = effects.keys.filter { it != "elementAtk" && it != "skill" }
+    val affixCount = petEquipmentAffixCount(effects)
+    if (affixCount > 0) parts += "词条$affixCount"
+    val keys = effects.keys.filter { it != "elementAtk" && it != "skill" && it != "affixes" }
     if (keys.isNotEmpty()) {
         parts += "特效 ${keys.joinToString("、") { petEffectLabel(it) }}"
     }
     return parts.joinToString(" ")
+}
+
+private fun petEquipmentAffixCount(effects: JsonObject?): Int {
+    return (effects?.get("affixes") as? JsonArray)
+        ?.count { entry ->
+            val obj = entry as? JsonObject ?: return@count false
+            val value = obj["value"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull() ?: 0.0
+            value > 0
+        } ?: 0
 }
 
 private fun petEffectLabel(key: String): String = when (key) {

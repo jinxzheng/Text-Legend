@@ -842,8 +842,8 @@
                 <input id="harvest-reward-item-search" type="text" placeholder="搜索附加物品名/ID/类型（过滤下拉选项）">
               </div>
             </div>
-            <div class="table-container compact-config-table-container">
-              <table class="compact-config-table" style="font-size: 12px;">
+            <div class="table-container compact-config-table-container harvest-season-reward-container">
+              <table class="compact-config-table harvest-season-reward-table" style="font-size: 12px;">
                 <thead>
                   <tr>
                     <th>挂机分钟</th>
@@ -1223,6 +1223,58 @@
                   </thead>
                   <tbody id="recharge-codes-list"></tbody>
                 </table>
+              </div>
+
+              <div style="border-top: 1px solid #ddd; margin-top: 16px; padding-top: 16px;">
+                <h4 style="margin: 0 0 10px;">支付宝当面付配置</h4>
+                <label class="admin-switch" style="margin-bottom: 8px;">
+                  <input type="checkbox" id="alipay-enabled">
+                  <span class="admin-switch-slider" aria-hidden="true"></span>
+                  <span class="admin-switch-label">启用支付宝扫码充值</span>
+                </label>
+                <div class="form-grid" style="margin-bottom: 8px;">
+                  <div class="form-field">
+                    <label for="alipay-app-id">App ID</label>
+                    <input id="alipay-app-id" type="text" placeholder="支付宝开放平台 App ID">
+                  </div>
+                  <div class="form-field">
+                    <label for="alipay-gateway">网关地址</label>
+                    <input id="alipay-gateway" type="text" placeholder="https://openapi.alipay.com/gateway.do">
+                  </div>
+                  <div class="form-field">
+                    <label for="alipay-notify-url">回调地址</label>
+                    <input id="alipay-notify-url" type="text" placeholder="https://域名/api/recharge/alipay/notify">
+                  </div>
+                  <div class="form-field">
+                    <label for="alipay-yuanbao-per-yuan">兑换比例</label>
+                    <input id="alipay-yuanbao-per-yuan" type="number" min="1" value="100">
+                  </div>
+                  <div class="form-field">
+                    <label for="alipay-min-amount-yuan">最低金额(元)</label>
+                    <input id="alipay-min-amount-yuan" type="number" min="0.01" step="0.01" value="1">
+                  </div>
+                  <div class="form-field">
+                    <label for="alipay-max-amount-yuan">最高金额(元)</label>
+                    <input id="alipay-max-amount-yuan" type="number" min="0.01" step="0.01" value="5000">
+                  </div>
+                </div>
+                <div class="form-grid" style="margin-bottom: 8px;">
+                  <div class="form-field">
+                    <label for="alipay-private-key">应用私钥</label>
+                    <textarea id="alipay-private-key" rows="5" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+                  </div>
+                  <div class="form-field">
+                    <label for="alipay-public-key">支付宝公钥</label>
+                    <textarea id="alipay-public-key" rows="5" placeholder="-----BEGIN PUBLIC KEY-----"></textarea>
+                  </div>
+                </div>
+                <div class="action-grid" style="margin-top: 8px;">
+                  <div id="alipay-msg" class="msg"></div>
+                  <div class="action-right">
+                    <button id="alipay-load-btn" class="btn-small">加载支付宝配置</button>
+                    <button id="alipay-save-btn" class="btn-small">保存支付宝配置</button>
+                  </div>
+                </div>
               </div>
 
               <div style="border-top: 1px solid #ddd; margin-top: 16px; padding-top: 16px;">

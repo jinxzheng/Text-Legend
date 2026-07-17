@@ -1,3 +1,5 @@
+import { timestampDefault } from '../time.js';
+
 export async function up(knex) {
   const isSqlite = knex.client.config.client === 'sqlite3';
 
@@ -6,8 +8,8 @@ export async function up(knex) {
     await knex.schema.createTable('realms', (t) => {
       t.increments('id').primary();
       t.string('name', 64).notNullable();
-      t.timestamp('created_at').defaultTo(knex.fn.now());
-      t.timestamp('updated_at').defaultTo(knex.fn.now());
+      t.timestamp('created_at').defaultTo(timestampDefault(knex));
+      t.timestamp('updated_at').defaultTo(timestampDefault(knex));
     });
   }
 

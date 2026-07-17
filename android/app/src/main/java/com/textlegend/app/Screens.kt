@@ -1665,7 +1665,11 @@ private fun formatEffectText(effects: JsonObject?): String {
     if (!skillId.isNullOrBlank()) {
         parts.add("附加技能:${skillNameById(skillId)}")
     }
-    val keys = effects.keys.filter { it != "elementAtk" && it != "skill" }
+    val affixes = formatEquipmentAffixes(effects)
+    if (affixes.isNotBlank()) {
+        parts.add("词条 $affixes")
+    }
+    val keys = effects.keys.filter { it != "elementAtk" && it != "skill" && it != "affixes" }
     if (keys.isNotEmpty()) {
         parts.add("特效 ${keys.joinToString("、") { effectLabel(it) }}")
     }
@@ -1679,11 +1683,46 @@ private fun formatEffectInline(effects: JsonObject?): String {
     if (!skillId.isNullOrBlank()) {
         parts.add("附加技能:${skillNameById(skillId)}")
     }
-    val keys = effects.keys.filter { it != "elementAtk" && it != "skill" }
+    val keys = effects.keys.filter { it != "elementAtk" && it != "skill" && it != "affixes" }
     if (keys.isNotEmpty()) {
         parts.add(keys.joinToString("、") { effectLabel(it) })
     }
+    val affixCount = equipmentAffixCount(effects)
+    if (affixCount > 0) parts.add("词条$affixCount")
     return parts.joinToString(" ")
+}
+
+private fun equipmentAffixCount(effects: JsonObject?): Int {
+    return (effects?.get("affixes") as? JsonArray)
+        ?.count { entry ->
+            val obj = entry as? JsonObject ?: return@count false
+            val value = obj["value"]?.jsonPrimitive?.doubleOrNull ?: 0.0
+            value > 0
+        } ?: 0
+}
+
+private fun formatEquipmentAffixes(effects: JsonObject?): String {
+    val affixes = effects?.get("affixes") as? JsonArray ?: return ""
+    return affixes.mapNotNull { entry ->
+        val obj = entry as? JsonObject ?: return@mapNotNull null
+        val attr = obj["attr"]?.jsonPrimitive?.contentOrNull.orEmpty()
+        val label = obj["label"]?.jsonPrimitive?.contentOrNull?.ifBlank { null } ?: affixLabel(attr)
+        val value = obj["value"]?.jsonPrimitive?.doubleOrNull?.toInt() ?: 0
+        if (value <= 0) null else "$label+$value"
+    }.take(5).joinToString("、")
+}
+
+private fun affixLabel(attr: String): String = when (attr) {
+    "hp" -> "生命"
+    "mp" -> "魔法值"
+    "atk" -> "攻击"
+    "def" -> "防御"
+    "mag" -> "魔法"
+    "mdef" -> "魔御"
+    "spirit" -> "道术"
+    "dex" -> "敏捷"
+    "elementAtk" -> "元素攻击"
+    else -> attr.ifBlank { "词条" }
 }
 
 private fun skillNameById(id: String): String {
@@ -1762,31 +1801,6 @@ private fun formatRate(raw: Double): String {
     }
     val trimmed = formatted.trimEnd('0').trimEnd('.')
     return "${if (trimmed.isBlank()) "0" else trimmed}%"
-}
-
-private val CULTIVATION_RANKS = listOf(
-    "筑基",
-    "灵虚",
-    "和合",
-    "元婴",
-    "空冥",
-    "履霜",
-    "渡劫",
-    "寂灭",
-    "大乘",
-    "上仙",
-    "真仙",
-    "天仙",
-    "声闻",
-    "缘觉",
-    "菩萨",
-    "佛"
-)
-
-private fun cultivationNameByLevel(levelValue: Int): String {
-    if (levelValue < 0) return "无"
-    val idx = levelValue.coerceIn(0, CULTIVATION_RANKS.size - 1)
-    return CULTIVATION_RANKS[idx]
 }
 
 private fun partyMembersText(party: PartyInfo): String {
@@ -2635,9 +2649,9 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
                       }
 
                       val cultivationLevel = stats.cultivation_level
-                      val cultivationName = cultivationNameByLevel(cultivationLevel)
+                      val cultivationName = stats.cultivation_name.ifBlank { if (cultivationLevel >= 0) "未知" else "无" }
                       val cultivationBonus = stats.cultivation_bonus
-                      val isMaxCultivation = cultivationLevel >= CULTIVATION_RANKS.size - 1
+                      val isMaxCultivation = stats.cultivation_is_max
                       val playerLevel = state?.player?.level ?: 0
                       val canUpgradeCultivation = playerLevel > 200 && !isMaxCultivation
                       Row(
@@ -3100,6 +3114,56 @@ private fun SettingsScreen(vm: GameViewModel, onDismiss: () -> Unit) {
                     TextButton(onClick = { showGuildShop = false }) { Text("关闭") }
                 }
             )
+        }
+    }
+}
+
+private data class EquippedOptionGroup(
+    val title: String,
+    val options: List<Pair<String, String>>,
+    val emptyText: String
+)
+
+@Composable
+private fun ParallelEquippedOptionGroups(
+    groups: List<EquippedOptionGroup>,
+    selected: String,
+    onSelect: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        groups.forEach { group ->
+            Column(modifier = Modifier.weight(1f)) {
+                Text(group.title, style = MaterialTheme.typography.titleSmall)
+                Spacer(modifier = Modifier.height(6.dp))
+                if (group.options.isEmpty()) {
+                    Text(group.emptyText, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                } else {
+                    group.options.forEach { (value, label) ->
+                        val isSelected = selected == value
+                        val bg = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant
+                        val border = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clickable { onSelect(value) },
+                            shape = RoundedCornerShape(8.dp),
+                            color = bg,
+                            border = BorderStroke(1.dp, border),
+                            tonalElevation = if (isSelected) 2.dp else 0.dp
+                        ) {
+                            Text(
+                                text = label,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -3886,7 +3950,16 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
       var mainSelection by remember { mutableStateOf("") }
       var secondarySelection by remember { mutableStateOf("") }
 
-      val mainOptions = buildForgeMainOptions(state)
+      val playerOptions = buildPlayerEquippedOptions(state, filter = { _, item -> isLegendaryOrAbove(item.rarity) })
+      val petOptions = buildPetEquippedOptions(state, filter = { _, item -> isLegendaryOrAbove(item.rarity) })
+      val mainOptions = playerOptions + petOptions
+      val optionGroups = buildEquippedOptionGroups(
+          state,
+          playerOptions,
+          petOptions,
+          playerEmptyText = "暂无人物已穿戴的传说及以上装备",
+          petEmptyText = "暂无宠物已穿戴的传说及以上装备"
+      )
       val secondaryOptions = buildForgeSecondaryOptions(state, mainSelection)
 
     ScreenScaffold(title = "装备合成", onBack = onDismiss) {
@@ -3897,12 +3970,7 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
         if (secondarySelection.isNotBlank() && secondaryOptions.none { it.first == secondarySelection }) {
             secondarySelection = ""
         }
-        Text("主件(已穿戴)")
-        if (mainOptions.isEmpty()) {
-            Text("暂无已穿戴装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            OptionGrid(options = mainOptions, selected = mainSelection, onSelect = { mainSelection = it })
-        }
+        ParallelEquippedOptionGroups(optionGroups, selected = mainSelection, onSelect = { mainSelection = it })
         Spacer(modifier = Modifier.height(8.dp))
         Text("副件(背包匹配)")
         if (mainSelection.isBlank()) {
@@ -3927,7 +3995,20 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
       val state by vm.gameState.collectAsState()
       var selection by remember { mutableStateOf("") }
       var bulkTarget by remember { mutableStateOf("10") }
-      val options = buildEquippedOptions(state)
+      val playerOptions = buildPlayerEquippedOptions(state, filter = { _, item ->
+          item.type == "weapon" || item.type == "armor" || item.type == "accessory"
+      })
+      val petOptions = buildPetEquippedOptions(state, filter = { _, item ->
+          item.slot?.isNotBlank() == true
+      })
+      val options = playerOptions + petOptions
+      val optionGroups = buildEquippedOptionGroups(
+          state,
+          playerOptions,
+          petOptions,
+          playerEmptyText = "暂无人物已穿戴装备",
+          petEmptyText = "暂无宠物已穿戴装备"
+      )
       val materialOptions = buildRefineMaterialOptions(state)
     val refineConfig = state?.refine_config
     val refineLevel = resolveRefineLevel(state, selection)
@@ -3938,14 +4019,7 @@ private fun ShopDialog(vm: GameViewModel, state: GameState?, onDismiss: () -> Un
           if (selection.isNotBlank() && options.none { it.first == selection }) {
               selection = ""
           }
-          Text("已穿戴装备（仅查看）")
-          if (options.isEmpty()) {
-              Text("暂无已穿戴装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
-          } else {
-              OptionGrid(options = options, selected = selection, onSelect = {
-                  selection = it
-              })
-          }
+          ParallelEquippedOptionGroups(optionGroups, selected = selection, onSelect = { selection = it })
         if (refineLevel != null && refineConfig != null && successRate != null) {
             Text("当前等级: +$refineLevel → +${refineLevel + 1}")
             Text("成功率: ${"%.1f".format(successRate)}%")
@@ -3989,7 +4063,32 @@ private fun GrowthDialog(vm: GameViewModel, onDismiss: () -> Unit) {
     var showBatchInput by remember { mutableStateOf(false) }
     var showBatchConfirm by remember { mutableStateOf(false) }
     var batchInput by remember { mutableStateOf("1") }
-    val options = buildUltimateGrowthEquippedOptions(state)
+    val playerOptions = buildPlayerEquippedOptions(
+        state,
+        filter = { _, item -> normalizeRarityKey(item.rarity) == "ultimate" },
+        labelBuilder = { eq, item ->
+            val growthLevel = (eq.growth_level.takeIf { it > 0 } ?: item.growth_level).coerceAtLeast(0)
+            val failStack = (eq.growth_fail_stack.takeIf { it > 0 } ?: item.growth_fail_stack).coerceAtLeast(0)
+            "${equipSlotLabel(eq.slot)}: ${item.name} (Lv$growthLevel 保底$failStack)"
+        }
+    )
+    val petOptions = buildPetEquippedOptions(
+        state,
+        filter = { _, item -> normalizeRarityKey(item.rarity) == "ultimate" },
+        labelBuilder = { pet, item ->
+            val growthLevel = item.growth_level.coerceAtLeast(0)
+            val failStack = item.growth_fail_stack.coerceAtLeast(0)
+            "${petEquipSlotLabelLocal(item.slot)}: ${item.name} (Lv$growthLevel 保底$failStack / ${pet.name})"
+        }
+    )
+    val options = playerOptions + petOptions
+    val optionGroups = buildEquippedOptionGroups(
+        state,
+        playerOptions,
+        petOptions,
+        playerEmptyText = "暂无人物终极装备",
+        petEmptyText = "暂无宠物终极装备"
+    )
     val growthConfig = state?.ultimate_growth_config
     val runtime = remember(growthConfig) { toGrowthRuntimeConfig(growthConfig) }
     val currentLevel = resolveGrowthLevel(state, selection)
@@ -4097,12 +4196,7 @@ private fun GrowthDialog(vm: GameViewModel, onDismiss: () -> Unit) {
         if (selection.isNotBlank() && options.none { it.first == selection }) {
             selection = ""
         }
-        Text("已穿戴终极装备")
-        if (options.isEmpty()) {
-            Text("暂无可成长装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            OptionGrid(options = options, selected = selection, onSelect = { selection = it })
-        }
+        ParallelEquippedOptionGroups(optionGroups, selected = selection, onSelect = { selection = it })
 
         Spacer(modifier = Modifier.height(8.dp))
         if (currentLevel != null && failStack != null) {
@@ -4278,7 +4372,16 @@ private fun EffectDialog(vm: GameViewModel, onDismiss: () -> Unit) {
     val state by vm.gameState.collectAsState()
     var mainSelection by remember { mutableStateOf("") }
     var secondarySelection by remember { mutableStateOf("") }
-      val equipOptions = buildEffectMainOptions(state)
+    val playerOptions = buildPlayerEquippedOptions(state, filter = { _, item -> hasSpecialEffects(item.effects) })
+    val petOptions = buildPetEquippedOptions(state, filter = { _, item -> hasSpecialEffects(item.effects) })
+    val equipOptions = playerOptions + petOptions
+    val optionGroups = buildEquippedOptionGroups(
+        state,
+        playerOptions,
+        petOptions,
+        playerEmptyText = "暂无人物已穿戴的特效装备",
+        petEmptyText = "暂无宠物已穿戴的特效装备"
+    )
     val inventoryOptions = buildEffectSecondaryOptions(state, mainSelection)
     val effectConfig = state?.effect_reset_config
     var showConfirm by remember { mutableStateOf(false) }
@@ -4320,12 +4423,7 @@ private fun EffectDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             )
         }
 
-        Text("主件(已穿戴)")
-        if (equipOptions.isEmpty()) {
-            Text("暂无已穿戴装备", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            OptionGrid(options = equipOptions, selected = mainSelection, onSelect = { mainSelection = it })
-        }
+        ParallelEquippedOptionGroups(optionGroups, selected = mainSelection, onSelect = { mainSelection = it })
         Spacer(modifier = Modifier.height(8.dp))
         Text("副件(背包匹配)")
         if (mainSelection.isBlank()) {
@@ -4342,10 +4440,10 @@ private fun EffectDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             Text("成功率: ${formatRate(effectConfig.success_rate)}")
             Text(
                 "多特效概率: " +
-                    "2条${formatRate(effectConfig.double_rate)} " +
-                    "3条${formatRate(effectConfig.triple_rate)} " +
-                    "4条${formatRate(effectConfig.quadruple_rate)} " +
-                    "5条${formatRate(effectConfig.quintuple_rate)}"
+                    "2特效/2词条${formatRate(effectConfig.double_rate)} " +
+                    "3特效/3词条${formatRate(effectConfig.triple_rate)} " +
+                    "4特效/4词条${formatRate(effectConfig.quadruple_rate)} " +
+                    "5特效/5词条${formatRate(effectConfig.quintuple_rate)}"
             )
         }
         Text("说明：主件为已穿戴，副件自动匹配背包内符合条件的装备。")
@@ -4644,8 +4742,12 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
     val beastExchange by vm.activityDivineBeastExchange.collectAsState()
     var showPointShop by remember { mutableStateOf(false) }
     var showBeastExchange by remember { mutableStateOf(false) }
+    var showDailyBounty by remember { mutableStateOf(false) }
+    var showEquipmentCodex by remember { mutableStateOf(false) }
     val activityRoot = state?.activities as? JsonObject
     val progress = activityRoot?.get("progress") as? JsonObject
+    val dailyBounty = progress?.get("daily_bounty") as? JsonObject
+    val equipmentCodex = state?.equipment_codex as? JsonObject
     val harvest = progress?.get("harvest_season") as? JsonObject
     val harvestMinutes = harvest?.get("onlineMinutes")?.jsonPrimitive?.intOrNull ?: 0
     val harvestPatrol = harvest?.get("patrolPoints")?.jsonPrimitive?.intOrNull ?: 0
@@ -4678,6 +4780,21 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
         )
         return
     }
+    if (showDailyBounty) {
+        DailyBountyDialog(
+            vm = vm,
+            bounty = dailyBounty,
+            onDismiss = { showDailyBounty = false }
+        )
+        return
+    }
+    if (showEquipmentCodex) {
+        EquipmentCodexDialog(
+            codex = equipmentCodex,
+            onDismiss = { showEquipmentCodex = false }
+        )
+        return
+    }
 
     ScreenScaffold(title = "活动中心", onBack = onDismiss) {
         Text("常用活动功能", style = MaterialTheme.typography.titleMedium)
@@ -4705,6 +4822,17 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
                 vm.requestActivityDivineBeastExchange()
             }
         ) { Text("神兽碎片兑换") }
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = { showDailyBounty = true }
+            ) { Text("每日悬赏") }
+            Button(
+                modifier = Modifier.weight(1f),
+                onClick = { showEquipmentCodex = true }
+            ) { Text("装备图鉴") }
+        }
         Spacer(modifier = Modifier.height(12.dp))
         val chestText = if (harvestChestActive) {
             "${if (harvestChestName.isNotBlank()) harvestChestName else "丰收宝箱"}${if (harvestChestClaimed) "已领取" else "可领取"}"
@@ -4718,6 +4846,15 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             "丰收季：签到${if (harvestLoginClaimed) "已领取" else "未领取"} / 赐福${if (harvestBlessingName.isNotBlank()) harvestBlessingName else if (harvestBlessingClaimed) "已领取" else "未领取"} / 补给${if (harvestSupplyClaimed) "已领取" else "未领取"} / 宝箱$chestText / 挂机 ${harvestMinutes} 分钟 / 巡礼 ${harvestPatrol}（奖励统一计入活动积分）",
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            "每日悬赏：可领取 ${dailyBounty?.get("claimableCount")?.jsonPrimitive?.intOrNull ?: 0} 项 / 已完成 ${dailyBounty?.get("completedCount")?.jsonPrimitive?.intOrNull ?: 0} 项",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            "装备图鉴：${equipmentCodex?.get("unlocked")?.jsonPrimitive?.intOrNull ?: 0}/${equipmentCodex?.get("total")?.jsonPrimitive?.intOrNull ?: 0}（${equipmentCodex?.get("percent")?.jsonPrimitive?.contentOrNull ?: "0"}%）",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
         pointShop?.let {
             Spacer(modifier = Modifier.height(6.dp))
             Text("当前活动积分：${it.points}", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -4727,6 +4864,175 @@ private fun ActivityCenterDialog(vm: GameViewModel, onDismiss: () -> Unit) {
             Text("${it.fragmentName}：${it.fragmentQty}", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+@Composable
+private fun DailyBountyDialog(
+    vm: GameViewModel,
+    bounty: JsonObject?,
+    onDismiss: () -> Unit
+) {
+    val tasks = (bounty?.get("tasks") as? JsonArray).orEmpty()
+    val claimableCount = bounty?.get("claimableCount")?.jsonPrimitive?.intOrNull ?: 0
+    ScreenScaffold(title = "每日悬赏", onBack = onDismiss) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                modifier = Modifier.weight(1f),
+                enabled = claimableCount > 0,
+                onClick = { vm.claimDailyBounty("all") }
+            ) { Text("一键领取 $claimableCount") }
+            OutlinedButton(
+                modifier = Modifier.weight(1f),
+                onClick = { vm.requestState("daily_bounty") }
+            ) { Text("刷新") }
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        if (tasks.isEmpty()) {
+            Text("暂无悬赏任务", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            tasks.forEach { entry ->
+                val task = entry as? JsonObject ?: return@forEach
+                val id = task["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                val name = task["name"]?.jsonPrimitive?.contentOrNull ?: id
+                val desc = task["desc"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                val progressValue = task["progress"]?.jsonPrimitive?.intOrNull ?: 0
+                val target = (task["target"]?.jsonPrimitive?.intOrNull ?: 1).coerceAtLeast(1)
+                val points = task["points"]?.jsonPrimitive?.intOrNull ?: 0
+                val gold = task["gold"]?.jsonPrimitive?.intOrNull ?: 0
+                val claimed = task["claimed"]?.jsonPrimitive?.contentOrNull == "true"
+                val canClaim = task["canClaim"]?.jsonPrimitive?.contentOrNull == "true"
+                val items = (task["items"] as? JsonArray).orEmpty().mapNotNull { itemEntry ->
+                    val obj = itemEntry as? JsonObject ?: return@mapNotNull null
+                    val itemName = obj["name"]?.jsonPrimitive?.contentOrNull
+                        ?: obj["id"]?.jsonPrimitive?.contentOrNull
+                        ?: return@mapNotNull null
+                    val qty = obj["qty"]?.jsonPrimitive?.intOrNull ?: 1
+                    "$itemName x$qty"
+                }
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(name, fontWeight = FontWeight.SemiBold)
+                            Text(if (claimed) "已领取" else if (canClaim) "可领取" else "$progressValue/$target")
+                        }
+                        if (desc.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(desc, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(
+                            progress = (progressValue.toFloat() / target.toFloat()).coerceIn(0f, 1f),
+                            modifier = Modifier.fillMaxWidth().height(6.dp),
+                            trackColor = MaterialTheme.colorScheme.surface
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "奖励：活动积分+$points / 金币+$gold${if (items.isNotEmpty()) " / ${items.joinToString("、")}" else ""}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (!claimed) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                enabled = canClaim && id.isNotBlank(),
+                                onClick = { vm.claimDailyBounty(id) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) { Text(if (canClaim) "领取奖励" else "未完成") }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun EquipmentCodexDialog(
+    codex: JsonObject?,
+    onDismiss: () -> Unit
+) {
+    val total = codex?.get("total")?.jsonPrimitive?.intOrNull ?: 0
+    val unlocked = codex?.get("unlocked")?.jsonPrimitive?.intOrNull ?: 0
+    val percent = codex?.get("percent")?.jsonPrimitive?.contentOrNull ?: "0"
+    val byRarity = codex?.get("byRarity") as? JsonObject
+    val bonus = codex?.get("bonus") as? JsonObject
+    val recent = (codex?.get("recent") as? JsonArray).orEmpty()
+    ScreenScaffold(title = "装备图鉴", onBack = onDismiss) {
+        Text("点亮进度：$unlocked/$total（$percent%）", fontWeight = FontWeight.SemiBold)
+        Spacer(modifier = Modifier.height(8.dp))
+        LinearProgressIndicator(
+            progress = if (total > 0) (unlocked.toFloat() / total.toFloat()).coerceIn(0f, 1f) else 0f,
+            modifier = Modifier.fillMaxWidth().height(8.dp)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Text("稀有度进度", style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(6.dp))
+        val rarityRows = byRarity?.values.orEmpty().mapNotNull { entry ->
+            val obj = entry as? JsonObject ?: return@mapNotNull null
+            val totalByRarity = obj["total"]?.jsonPrimitive?.intOrNull ?: 0
+            if (totalByRarity <= 0) return@mapNotNull null
+            val label = obj["label"]?.jsonPrimitive?.contentOrNull ?: obj["key"]?.jsonPrimitive?.contentOrNull.orEmpty()
+            val unlockedByRarity = obj["unlocked"]?.jsonPrimitive?.intOrNull ?: 0
+            "$label：$unlockedByRarity/$totalByRarity"
+        }
+        Text(rarityRows.joinToString(" / ").ifBlank { "暂无" }, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.height(12.dp))
+        Text("永久加成", style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(formatCodexBonus(bonus), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.height(12.dp))
+        Text("最近点亮", style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(6.dp))
+        if (recent.isEmpty()) {
+            Text("暂无", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            recent.forEach { entry ->
+                val obj = entry as? JsonObject ?: return@forEach
+                val name = obj["name"]?.jsonPrimitive?.contentOrNull ?: obj["id"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                val rarity = obj["rarity"]?.jsonPrimitive?.contentOrNull.orEmpty()
+                Text(
+                    if (rarity.isNotBlank()) "$name（${rarityLabel(rarity)}）" else name,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+private fun formatCodexBonus(bonus: JsonObject?): String {
+    if (bonus == null) return "暂无"
+    val parts = listOf(
+        "max_hp" to "生命",
+        "max_mp" to "魔法值",
+        "atk" to "攻击",
+        "def" to "防御",
+        "mag" to "魔法",
+        "spirit" to "道术",
+        "mdef" to "魔御",
+        "dex" to "敏捷"
+    ).mapNotNull { (key, label) ->
+        val value = bonus[key]?.jsonPrimitive?.intOrNull ?: 0
+        if (value > 0) "$label+$value" else null
+    }
+    return parts.joinToString("、").ifBlank { "暂无" }
+}
+
+private fun rarityLabel(rarity: String): String = when (rarity.lowercase()) {
+    "common" -> "普通"
+    "uncommon" -> "优秀"
+    "rare" -> "稀有"
+    "epic" -> "史诗"
+    "legendary" -> "传说"
+    "supreme" -> "至尊"
+    "ultimate" -> "终极"
+    else -> rarity
 }
 
 @Composable
@@ -5659,25 +5965,49 @@ private fun buildInventoryOptions(state: GameState?): List<Pair<String, String>>
     }
 }
 
-  private fun buildEquippedOptions(state: GameState?): List<Pair<String, String>> {
-      val list = state?.equipment.orEmpty()
-      return list.mapNotNull { eq ->
-          val item = eq.item ?: return@mapNotNull null
-          val label = "${equipSlotLabel(eq.slot)}: ${item.name}"
-          "equip:${eq.slot}" to label
-      }
-  }
+private fun petEquippedSelectionKey(petId: String, slot: String?): String {
+    return "petequip:$petId:${slot?.trim().orEmpty()}"
+}
 
-private fun buildUltimateGrowthEquippedOptions(state: GameState?): List<Pair<String, String>> {
-    val list = state?.equipment.orEmpty()
-    return list.mapNotNull { eq ->
+private fun buildPlayerEquippedOptions(
+    state: GameState?,
+    filter: (EquipmentInfo, ItemInfo) -> Boolean = { _, _ -> true },
+    labelBuilder: (EquipmentInfo, ItemInfo) -> String = { eq, item -> "${equipSlotLabel(eq.slot)}: ${item.name}" }
+): List<Pair<String, String>> {
+    return state?.equipment.orEmpty().mapNotNull { eq ->
         val item = eq.item ?: return@mapNotNull null
-        if (normalizeRarityKey(item.rarity) != "ultimate") return@mapNotNull null
-        val growthLevel = (eq.growth_level.takeIf { it > 0 } ?: item.growth_level).coerceAtLeast(0)
-        val failStack = (eq.growth_fail_stack.takeIf { it > 0 } ?: item.growth_fail_stack).coerceAtLeast(0)
-        val label = "${equipSlotLabel(eq.slot)}: ${item.name} (Lv$growthLevel 保底$failStack)"
-        "equip:${eq.slot}" to label
+        if (!filter(eq, item)) return@mapNotNull null
+        "equip:${eq.slot}" to labelBuilder(eq, item)
     }
+}
+
+private fun buildPetEquippedOptions(
+    state: GameState?,
+    filter: (PetInfo, PetEquippedItem) -> Boolean = { _, _ -> true },
+    labelBuilder: (PetInfo, PetEquippedItem) -> String = { pet, item -> "${petEquipSlotLabelLocal(item.slot)}: ${item.name} (${pet.name})" }
+): List<Pair<String, String>> {
+    val pets = state?.pet?.pets.orEmpty()
+    return pets.flatMap { pet ->
+        pet.equippedItems.mapNotNull { item ->
+            val slot = item.slot?.trim().orEmpty()
+            if (slot.isBlank()) return@mapNotNull null
+            if (!filter(pet, item)) return@mapNotNull null
+            petEquippedSelectionKey(pet.id, slot) to labelBuilder(pet, item)
+        }
+    }
+}
+
+private fun buildEquippedOptionGroups(
+    state: GameState?,
+    playerOptions: List<Pair<String, String>>,
+    petOptions: List<Pair<String, String>>,
+    playerEmptyText: String = "暂无人物已穿戴装备",
+    petEmptyText: String = "暂无宠物已穿戴装备"
+): List<EquippedOptionGroup> {
+    return listOf(
+        EquippedOptionGroup("人物穿戴装备", playerOptions, playerEmptyText),
+        EquippedOptionGroup("宠物穿戴装备", petOptions, petEmptyText)
+    )
 }
 
   private fun equipSlotLabel(slot: String): String = when (slot) {
@@ -5689,6 +6019,20 @@ private fun buildUltimateGrowthEquippedOptions(state: GameState?): List<Pair<Str
     "head" -> "头盔"
       else -> slot
   }
+
+private fun petEquipSlotLabelLocal(slot: String?): String = when (slot) {
+    "weapon" -> "武器"
+    "chest" -> "衣服"
+    "head" -> "头盔"
+    "waist" -> "腰带"
+    "feet" -> "鞋子"
+    "neck" -> "项链"
+    "ring_left" -> "左戒指"
+    "ring_right" -> "右戒指"
+    "bracelet_left" -> "左手镯"
+    "bracelet_right" -> "右手镯"
+    else -> slot?.ifBlank { "装备" } ?: "装备"
+}
 
   private fun isLegendaryOrAbove(rarity: String?): Boolean {
       return rarityRank(rarity) >= 4
@@ -5737,18 +6081,45 @@ private fun hasSpecialEffects(effects: JsonObject?): Boolean {
     return effects != null && effects.isNotEmpty()
 }
 
+private fun hasEffectResetMaterialEffects(effects: JsonObject?): Boolean {
+    if (effects == null) return false
+    val baseEffects = setOf("combo", "fury", "unbreakable", "defense", "dodge", "poison", "healblock")
+    if (baseEffects.any { effects[it] != null }) return true
+    val skill = effects["skill"]?.jsonPrimitive?.contentOrNull.orEmpty()
+    return skill.isNotBlank()
+}
+
   private fun buildEffectSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
-      if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
-      val slot = mainSelection.removePrefix("equip:").trim()
-      val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
-      if (mainEq.item?.id.isNullOrBlank()) return emptyList()
+      if (state == null || mainSelection.isBlank()) return emptyList()
+      val mainExists = when {
+          mainSelection.startsWith("equip:") -> {
+              val slot = mainSelection.removePrefix("equip:").trim()
+              state.equipment.firstOrNull { it.slot == slot }?.item?.id?.isNotBlank() == true
+          }
+          mainSelection.startsWith("petequip:") -> {
+              val body = mainSelection.removePrefix("petequip:")
+              val split = body.indexOf(':')
+              if (split <= 0) false else {
+                  val petId = body.substring(0, split).trim()
+                  val slot = body.substring(split + 1).trim()
+                  state.pet?.pets.orEmpty()
+                      .firstOrNull { it.id == petId }
+                      ?.equippedItems
+                      ?.firstOrNull { it.slot == slot }
+                      ?.id
+                      ?.isNotBlank() == true
+              }
+          }
+          else -> false
+      }
+      if (!mainExists) return emptyList()
       return state.items.orEmpty()
           .filter { item ->
               val isEquip = !item.slot.isNullOrBlank() || item.type == "weapon" || item.type == "armor" || item.type == "accessory"
               val notShop = item.is_shop_item != true
               val rarityKey = normalizeRarityKey(item.rarity)
               val rarityOk = rarityKey != "supreme" && rarityKey != "ultimate"
-              isEquip && notShop && rarityOk && hasSpecialEffects(item.effects) && item.qty > 0
+              isEquip && notShop && rarityOk && hasEffectResetMaterialEffects(item.effects) && item.qty > 0
           }
           .map { item ->
               val key = if (item.key.isNotBlank()) item.key else item.id
@@ -5757,10 +6128,27 @@ private fun hasSpecialEffects(effects: JsonObject?): Boolean {
   }
 
   private fun buildForgeSecondaryOptions(state: GameState?, mainSelection: String): List<Pair<String, String>> {
-      if (state == null || mainSelection.isBlank() || !mainSelection.startsWith("equip:")) return emptyList()
-      val slot = mainSelection.removePrefix("equip:").trim()
-      val mainEq = state.equipment.firstOrNull { it.slot == slot } ?: return emptyList()
-      val mainRarity = mainEq.item?.rarity ?: return emptyList()
+      if (state == null || mainSelection.isBlank()) return emptyList()
+      val mainRarity = when {
+          mainSelection.startsWith("equip:") -> {
+              val slot = mainSelection.removePrefix("equip:").trim()
+              state.equipment.firstOrNull { it.slot == slot }?.item?.rarity
+          }
+          mainSelection.startsWith("petequip:") -> {
+              val body = mainSelection.removePrefix("petequip:")
+              val split = body.indexOf(':')
+              if (split <= 0) null else {
+                  val petId = body.substring(0, split).trim()
+                  val slot = body.substring(split + 1).trim()
+                  state.pet?.pets.orEmpty()
+                      .firstOrNull { it.id == petId }
+                      ?.equippedItems
+                      ?.firstOrNull { it.slot == slot }
+                      ?.rarity
+              }
+          }
+          else -> null
+      } ?: return emptyList()
       val mainRarityRank = rarityRank(mainRarity)
       if (mainRarityRank < 4) return emptyList()
       return state.items.orEmpty()
@@ -5784,6 +6172,18 @@ private fun resolveRefineLevel(state: GameState?, selection: String): Int? {
         val eq = state.equipment.firstOrNull { it.slot == slot }
         return eq?.refine_level ?: 0
     }
+    if (selection.startsWith("petequip:")) {
+        val body = selection.removePrefix("petequip:")
+        val split = body.indexOf(':')
+        if (split <= 0) return 0
+        val petId = body.substring(0, split).trim()
+        val slot = body.substring(split + 1).trim()
+        return state.pet?.pets.orEmpty()
+            .firstOrNull { it.id == petId }
+            ?.equippedItems
+            ?.firstOrNull { it.slot == slot }
+            ?.refine_level ?: 0
+    }
     val key = selection.trim()
     val item = state.items.firstOrNull { it.key == key || it.id == key }
     return item?.refine_level ?: 0
@@ -5791,22 +6191,50 @@ private fun resolveRefineLevel(state: GameState?, selection: String): Int? {
 
 private fun resolveGrowthLevel(state: GameState?, selection: String): Int? {
     if (selection.isBlank() || state == null) return null
-    if (!selection.startsWith("equip:")) return 0
-    val slot = selection.removePrefix("equip:").trim()
-    val eq = state.equipment.firstOrNull { it.slot == slot } ?: return 0
-    val fromEq = eq.growth_level
-    if (fromEq > 0) return fromEq
-    return eq.item?.growth_level ?: 0
+    if (selection.startsWith("equip:")) {
+        val slot = selection.removePrefix("equip:").trim()
+        val eq = state.equipment.firstOrNull { it.slot == slot } ?: return 0
+        val fromEq = eq.growth_level
+        if (fromEq > 0) return fromEq
+        return eq.item?.growth_level ?: 0
+    }
+    if (selection.startsWith("petequip:")) {
+        val body = selection.removePrefix("petequip:")
+        val split = body.indexOf(':')
+        if (split <= 0) return 0
+        val petId = body.substring(0, split).trim()
+        val slot = body.substring(split + 1).trim()
+        val eq = state.pet?.pets.orEmpty()
+            .firstOrNull { it.id == petId }
+            ?.equippedItems
+            ?.firstOrNull { it.slot == slot } ?: return 0
+        return eq.growth_level
+    }
+    return 0
 }
 
 private fun resolveGrowthFailStack(state: GameState?, selection: String): Int? {
     if (selection.isBlank() || state == null) return null
-    if (!selection.startsWith("equip:")) return 0
-    val slot = selection.removePrefix("equip:").trim()
-    val eq = state.equipment.firstOrNull { it.slot == slot } ?: return 0
-    val fromEq = eq.growth_fail_stack
-    if (fromEq > 0) return fromEq
-    return eq.item?.growth_fail_stack ?: 0
+    if (selection.startsWith("equip:")) {
+        val slot = selection.removePrefix("equip:").trim()
+        val eq = state.equipment.firstOrNull { it.slot == slot } ?: return 0
+        val fromEq = eq.growth_fail_stack
+        if (fromEq > 0) return fromEq
+        return eq.item?.growth_fail_stack ?: 0
+    }
+    if (selection.startsWith("petequip:")) {
+        val body = selection.removePrefix("petequip:")
+        val split = body.indexOf(':')
+        if (split <= 0) return 0
+        val petId = body.substring(0, split).trim()
+        val slot = body.substring(split + 1).trim()
+        val eq = state.pet?.pets.orEmpty()
+            .firstOrNull { it.id == petId }
+            ?.equippedItems
+            ?.firstOrNull { it.slot == slot } ?: return 0
+        return eq.growth_fail_stack
+    }
+    return 0
 }
 
 private fun calcRefineSuccessRate(currentLevel: Int, config: RefineConfig): Double {

@@ -1,3 +1,5 @@
+import { timestampDefault } from '../time.js';
+
 export async function up(knex) {
   const client = String(knex?.client?.config?.client || '').toLowerCase();
   const isMysql = client.includes('mysql');
@@ -10,7 +12,7 @@ export async function up(knex) {
       t.integer('user_id').notNullable();
       t.string('char_name', 64).notNullable();
       t.integer('realm_id').notNullable().defaultTo(1);
-      t.timestamp('applied_at').defaultTo(knex.fn.now());
+      t.timestamp('applied_at').defaultTo(timestampDefault(knex));
       t.unique(['user_id', 'realm_id']);
     });
     return;

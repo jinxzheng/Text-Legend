@@ -2,6 +2,7 @@ import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import knex from './index.js';
+import { timestampDefault } from './time.js';
 
 export async function runMigrations({ destroy = false } = {}) {
   const dir = new URL('./migrations/', import.meta.url);
@@ -11,7 +12,7 @@ export async function runMigrations({ destroy = false } = {}) {
   if (!hasTable) {
     await knex.schema.createTable('knex_migrations_custom', (t) => {
       t.string('name').primary();
-      t.timestamp('run_at').defaultTo(knex.fn.now());
+      t.timestamp('run_at').defaultTo(timestampDefault(knex));
     });
   }
 

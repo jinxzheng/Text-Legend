@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import path from 'node:path';
@@ -55,6 +55,7 @@ const BUILD_VERSION_INFO = (() => {
 let updateInProgress = false;
 const UPDATE_GIT_CMD = String(process.env.UPDATE_GIT_CMD || 'git pull --ff-only').trim();
 const UPDATE_RESTART_CMD = String(process.env.UPDATE_RESTART_CMD || '').trim();
+const EXIT_ON_UNHANDLED_REJECTION = process.env.EXIT_ON_UNHANDLED_REJECTION === 'true';
 
 import config from './config.js';
 import { validatePlayerName } from './game/validator.js';
@@ -66,8 +67,8 @@ import { getGuildBuildingInfo, addGuildBuildingContribution, buildGuildBuildingP
 import { createAdminSession, listUsers, verifyAdminSession, deleteUser } from './db/admin.js';
 import { sendMail, listMail, listSentMail, markMailRead, markMailClaimed, deleteMail } from './db/mail.js';
 import { createVipCodes, listVipCodes, countVipCodes, useVipCode } from './db/vip.js';
-import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard, listUsedRechargeCharacters } from './db/recharge.js';
-import { getSetting, setSetting, loadSettingsCache, reloadSettingsCache, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getVipClaimLimitEnabled, setVipClaimLimitEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getCacheMonsterHealthEnabled, setCacheMonsterHealthEnabled, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingFruitDropEnabled as getTrainingFruitDropEnabledDb, setTrainingFruitDropEnabled as setTrainingFruitDropEnabledDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getPetTrainingFruitDropEnabled as getPetTrainingFruitDropEnabledDb, setPetTrainingFruitDropEnabled as setPetTrainingFruitDropEnabledDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns, getUltimateGrowthConfig as getUltimateGrowthConfigDb, setUltimateGrowthConfig as setUltimateGrowthConfigDb, getPlayerSaveDebounceMs, setPlayerSaveDebounceMs, getPlayerSaveMinIntervalMs as getPlayerSaveMinIntervalMsDb, setPlayerSaveMinIntervalMs, getPlayerSaveManagedMinIntervalMs, setPlayerSaveManagedMinIntervalMs, getPlayerSaveManagedForceIntervalMs, setPlayerSaveManagedForceIntervalMs, getPlayerSaveDetachedMinIntervalMs, setPlayerSaveDetachedMinIntervalMs, getPlayerSaveForceDeadlineMs, setPlayerSaveForceDeadlineMs, getPlayerSaveMaxWritesPerFlush, setPlayerSaveMaxWritesPerFlush, getPlayerSaveForceFullEnabled, setPlayerSaveForceFullEnabled } from './db/settings.js';
+import { createRechargeCards, listRechargeCards, countRechargeCards, useRechargeCard, listUsedRechargeCharacters, createAlipayRechargeOrder, getAlipayRechargeOrder, markAlipayRechargeOrderCreated, markAlipayRechargeOrderPaid, markAlipayRechargeOrderCredited } from './db/recharge.js';
+import { getSetting, getSettingSync, setSetting, loadSettingsCache, reloadSettingsCache, getVipSelfClaimEnabled, setVipSelfClaimEnabled, getVipClaimLimitEnabled, setVipClaimLimitEnabled, getSvipPrices, setSvipPrices, getLootLogEnabled, setLootLogEnabled, getCrossWorldBossRespawnAt, setCrossWorldBossRespawnAt, getStateThrottleEnabled, setStateThrottleEnabled, getStateThrottleIntervalSec, setStateThrottleIntervalSec, getStateThrottleOverrideServerAllowed, setStateThrottleOverrideServerAllowed, getCacheMonsterHealthEnabled, setCacheMonsterHealthEnabled, getRoomVariantCount, setRoomVariantCount, getSabakStartHour, setSabakStartHour, getSabakStartMinute, setSabakStartMinute, getSabakDurationMinutes, setSabakDurationMinutes, getSabakSiegeMinutes, setSabakSiegeMinutes, getCrossRankStartHour, setCrossRankStartHour, getCrossRankStartMinute, setCrossRankStartMinute, getCrossRankDurationMinutes, setCrossRankDurationMinutes, canUserClaimVip, incrementCharacterVipClaimCount, getWorldBossKillCount, setWorldBossKillCount, getSpecialBossKillCount, setSpecialBossKillCount, getCultivationBossKillCount, setCultivationBossKillCount, getWorldBossDropBonus, setWorldBossDropBonus, getWorldBossBaseHp, setWorldBossBaseHp, getWorldBossBaseAtk, setWorldBossBaseAtk, getWorldBossBaseDef, setWorldBossBaseDef, getWorldBossBaseMdef, setWorldBossBaseMdef, getWorldBossBaseExp, setWorldBossBaseExp, getWorldBossBaseGold, setWorldBossBaseGold, getWorldBossRespawnMinutes, setWorldBossRespawnMinutes, getWorldBossPlayerBonusConfig, setWorldBossPlayerBonusConfig, getClassLevelBonusConfig, setClassLevelBonusConfig, getSpecialBossDropBonus, setSpecialBossDropBonus, getSpecialBossBaseHp, setSpecialBossBaseHp, getSpecialBossBaseAtk, setSpecialBossBaseAtk, getSpecialBossBaseDef, setSpecialBossBaseDef, getSpecialBossBaseMdef, setSpecialBossBaseMdef, getSpecialBossBaseExp, setSpecialBossBaseExp, getSpecialBossBaseGold, setSpecialBossBaseGold, getSpecialBossRespawnMinutes, setSpecialBossRespawnMinutes, getSpecialBossPlayerBonusConfig, setSpecialBossPlayerBonusConfig, getCultivationBossDropBonus, setCultivationBossDropBonus, getCultivationBossPlayerBonusConfig, setCultivationBossPlayerBonusConfig, getCultivationBossBaseHp, setCultivationBossBaseHp, getCultivationBossBaseAtk, setCultivationBossBaseAtk, getCultivationBossBaseDef, setCultivationBossBaseDef, getCultivationBossBaseMdef, setCultivationBossBaseMdef, getCultivationBossBaseExp, setCultivationBossBaseExp, getCultivationBossBaseGold, setCultivationBossBaseGold, getCultivationBossRespawnMinutes, setCultivationBossRespawnMinutes, getTrainingFruitCoefficient as getTrainingFruitCoefficientDb, setTrainingFruitCoefficient as setTrainingFruitCoefficientDb, getTrainingFruitDropRate as getTrainingFruitDropRateDb, setTrainingFruitDropRate as setTrainingFruitDropRateDb, getTrainingFruitDropEnabled as getTrainingFruitDropEnabledDb, setTrainingFruitDropEnabled as setTrainingFruitDropEnabledDb, getPetTrainingFruitDropRate as getPetTrainingFruitDropRateDb, setPetTrainingFruitDropRate as setPetTrainingFruitDropRateDb, getPetTrainingFruitDropEnabled as getPetTrainingFruitDropEnabledDb, setPetTrainingFruitDropEnabled as setPetTrainingFruitDropEnabledDb, getTrainingPerLevelConfig as getTrainingPerLevelConfigDb, setTrainingPerLevelConfig as setTrainingPerLevelConfigDb, getRefineBaseSuccessRate as getRefineBaseSuccessRateDb, setRefineBaseSuccessRate as setRefineBaseSuccessRateDb, getRefineDecayRate as getRefineDecayRateDb, setRefineDecayRate as setRefineDecayRateDb, getRefineMaterialCount as getRefineMaterialCountDb, setRefineMaterialCount as setRefineMaterialCountDb, getRefineBonusPerLevel as getRefineBonusPerLevelDb, setRefineBonusPerLevel as setRefineBonusPerLevelDb, getEffectResetSuccessRate as getEffectResetSuccessRateDb, setEffectResetSuccessRate as setEffectResetSuccessRateDb, getEffectResetDoubleRate as getEffectResetDoubleRateDb, setEffectResetDoubleRate as setEffectResetDoubleRateDb, getEffectResetTripleRate as getEffectResetTripleRateDb, setEffectResetTripleRate as setEffectResetTripleRateDb, getEffectResetQuadrupleRate as getEffectResetQuadrupleRateDb, setEffectResetQuadrupleRate as setEffectResetQuadrupleRateDb, getEffectResetQuintupleRate as getEffectResetQuintupleRateDb, setEffectResetQuintupleRate as setEffectResetQuintupleRateDb, getPetSettings, setPetSettings, getEffectDropSingleChance as getEffectDropSingleChanceDb, setEffectDropSingleChance as setEffectDropSingleChanceDb, getEffectDropDoubleChance as getEffectDropDoubleChanceDb, setEffectDropDoubleChance as setEffectDropDoubleChanceDb, getEquipSkillDropChance as getEquipSkillDropChanceDb, setEquipSkillDropChance as setEquipSkillDropChanceDb, getTreasureSlotCount as getTreasureSlotCountDb, setTreasureSlotCount as setTreasureSlotCountDb, getTreasureMaxLevel as getTreasureMaxLevelDb, setTreasureMaxLevel as setTreasureMaxLevelDb, getTreasureUpgradeConsume as getTreasureUpgradeConsumeDb, setTreasureUpgradeConsume as setTreasureUpgradeConsumeDb, getTreasureAdvanceConsume as getTreasureAdvanceConsumeDb, setTreasureAdvanceConsume as setTreasureAdvanceConsumeDb, getTreasureAdvancePerStage as getTreasureAdvancePerStageDb, setTreasureAdvancePerStage as setTreasureAdvancePerStageDb, getTreasureAdvanceEffectBonusPerStack as getTreasureAdvanceEffectBonusPerStackDb, setTreasureAdvanceEffectBonusPerStack as setTreasureAdvanceEffectBonusPerStackDb, getTreasureWorldBossDropMultiplier as getTreasureWorldBossDropMultiplierDb, setTreasureWorldBossDropMultiplier as setTreasureWorldBossDropMultiplierDb, getTreasureCrossWorldBossDropMultiplier as getTreasureCrossWorldBossDropMultiplierDb, setTreasureCrossWorldBossDropMultiplier as setTreasureCrossWorldBossDropMultiplierDb, getTreasureTowerXuanmingDropChance as getTreasureTowerXuanmingDropChanceDb, setTreasureTowerXuanmingDropChance as setTreasureTowerXuanmingDropChanceDb, getCmdRateLimits, setCmdRateLimits, getCmdCooldowns, setCmdCooldowns, getUltimateGrowthConfig as getUltimateGrowthConfigDb, setUltimateGrowthConfig as setUltimateGrowthConfigDb, getPlayerSaveDebounceMs, setPlayerSaveDebounceMs, getPlayerSaveMinIntervalMs as getPlayerSaveMinIntervalMsDb, setPlayerSaveMinIntervalMs, getPlayerSaveManagedMinIntervalMs, setPlayerSaveManagedMinIntervalMs, getPlayerSaveManagedForceIntervalMs, setPlayerSaveManagedForceIntervalMs, getPlayerSaveDetachedMinIntervalMs, setPlayerSaveDetachedMinIntervalMs, getPlayerSaveForceDeadlineMs, setPlayerSaveForceDeadlineMs, getPlayerSaveMaxWritesPerFlush, setPlayerSaveMaxWritesPerFlush, getPlayerSaveForceFullEnabled, setPlayerSaveForceFullEnabled } from './db/settings.js';
 import { listRealms, getRealmById, updateRealmName, createRealm } from './db/realms.js';
 import {
   listMobRespawnsPage,
@@ -148,6 +149,8 @@ import { listWorldZoneOverrides, listWorldRoomOverrides, getWorldZoneOverride, g
 import { runMigrations } from './db/migrate.js';
 import { getSmtpSettings, saveSmtpSettings, testSmtpConnection, sendPasswordResetEmail } from './db/smtp.js';
 import { newCharacter, computeDerived, gainExp, addItem, removeItem, getItemKey, normalizeInventory, normalizeEquipment, getDurabilityMax, getRepairCost, buildSpecializationPayload, SPECIALIZATION_DEFS } from './game/player.js';
+import { buildEquipmentCodexPayload } from './game/collections.js';
+import { maybeTriggerMapRandomEvent } from './game/random_events.js';
 import {
   handleCommand,
   awardKill,
@@ -169,6 +172,8 @@ import {
   claimHarvestSupplyByMail,
   claimHarvestTimedChestByMail,
   claimCommissionTask,
+  claimDailyBountyByMail,
+  recordDailyBountyProgress,
   normalizeHarvestSeasonRewardConfig,
   setHarvestSeasonRewardConfig,
   normalizeHarvestSeasonSignConfig,
@@ -212,6 +217,7 @@ import { getRoomMobs, getAliveMobs, spawnMobs, removeMob, seedRespawnCache, appe
 import { calcHitChance, calcDamage, applyDamage, applyHealing, applyPoison, applyPoisonEffect, tickStatus, getDefenseMultiplier, consumeFirestrikeCrit } from './game/combat.js';
 import { randInt, clamp } from './game/utils.js';
 import { expForLevel, ROOM_VARIANT_COUNT, setRoomVariantCount as applyRoomVariantCount } from './game/constants.js';
+import { CULTIVATION_RANKS, getCultivationInfo, getCultivationRewardMultiplier } from './game/cultivation.js';
 import {
   setAllClassLevelBonusConfigs,
   setClassLevelBonusConfig as setClassLevelBonusConfigMem,
@@ -303,6 +309,14 @@ async function autoClaimActivityRewardsForPlayer(player, now = Date.now()) {
       now
     });
     if (result?.ok && Number(result?.sent || 0) > 0) {
+      player.forceStateRefresh = true;
+    }
+    const bountyResult = await claimDailyBountyByMail(player, 'all', {
+      sendMail,
+      realmId: player.realmId || 1,
+      now
+    });
+    if (bountyResult?.ok) {
       player.forceStateRefresh = true;
     }
   } catch (_) {
@@ -986,7 +1000,19 @@ function grantFirstRechargeWelfareToPlayer(player, config = null) {
 }
 
 const app = express();
+app.set('trust proxy', true);
 const server = http.createServer(app);
+server.on('error', (err) => {
+  console.error('[server] error:', err);
+});
+server.on('clientError', (err, socket) => {
+  console.warn('[server] clientError:', err?.message || err);
+  try {
+    socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+  } catch {
+    // ignore socket close failures
+  }
+});
 const io = new Server(server, {
   pingInterval: 25000,
   pingTimeout: 90000,
@@ -999,11 +1025,35 @@ const io = new Server(server, {
 });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const publicDir = path.join(__dirname, '..', 'public');
+const publicIndexPath = path.join(publicDir, 'index.html');
 const ADMIN_BASE = (() => {
   const raw = String(config.adminPath || 'admin').trim();
   const cleaned = raw.replace(/^\/+|\/+$/g, '');
   return cleaned ? `/${cleaned}` : '/admin';
 })();
+const PUBLIC_BASE_URL = String(config.publicBaseUrl || '').replace(/\/+$/g, '');
+const REQUEST_LOG_ALL = Boolean(config.requestLogAll);
+const REQUEST_LOG_SLOW_MS = Math.max(0, Number(config.requestLogSlowMs || 1500));
+
+function getPublicBaseUrl(req) {
+  if (PUBLIC_BASE_URL) return PUBLIC_BASE_URL;
+  const forwardedProto = String(req.get('x-forwarded-proto') || '').split(',')[0].trim();
+  const forwardedHost = String(req.get('x-forwarded-host') || '').split(',')[0].trim();
+  const protocol = forwardedProto || req.protocol;
+  const host = forwardedHost || req.get('host');
+  return `${protocol}://${host}`;
+}
+
+function shouldLogRequest(req, statusCode, durationMs) {
+  const pathValue = String(req.path || req.url || '');
+  if (pathValue.startsWith('/socket.io/')) return false;
+  if (REQUEST_LOG_ALL) return true;
+  if (statusCode >= 500) return true;
+  if (durationMs >= REQUEST_LOG_SLOW_MS) return true;
+  if (pathValue.startsWith('/api/')) return true;
+  return false;
+}
 
 if (ADMIN_BASE !== '/admin') {
   app.use((req, res, next) => {
@@ -1015,9 +1065,275 @@ if (ADMIN_BASE !== '/admin') {
   });
 }
 app.use(express.json({ limit: '100mb' }));
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.urlencoded({ extended: false, limit: '2mb' }));
+app.use((req, res, next) => {
+  const startedAt = Date.now();
+  const requestId = crypto.randomUUID().slice(0, 8);
+  req.requestId = requestId;
+  res.setHeader('X-Request-Id', requestId);
+  res.on('finish', () => {
+    const durationMs = Date.now() - startedAt;
+    if (!shouldLogRequest(req, res.statusCode, durationMs)) return;
+    const forwardedFor = String(req.get('x-forwarded-for') || '').split(',')[0].trim();
+    const remoteIp = forwardedFor || req.socket?.remoteAddress || '-';
+    console.log(
+      `[req] id=${requestId} ip=${remoteIp} ${req.method} ${req.originalUrl || req.url} `
+      + `status=${res.statusCode} dur=${durationMs}ms`
+    );
+  });
+  next();
+});
+
+function normalizePemKey(rawKey, type, labelOverride = '') {
+  const value = String(rawKey || '').replace(/\\n/g, '\n').trim();
+  if (!value) return '';
+  if (value.includes('-----BEGIN')) return value;
+  const label = labelOverride || (type === 'public' ? 'PUBLIC KEY' : 'PRIVATE KEY');
+  const body = value.replace(/\s+/g, '').match(/.{1,64}/g)?.join('\n') || value;
+  return `-----BEGIN ${label}-----\n${body}\n-----END ${label}-----`;
+}
+
+function getPemKeyCandidates(rawKey, type) {
+  const value = String(rawKey || '').replace(/\\n/g, '\n').trim();
+  if (!value) return [];
+  if (value.includes('-----BEGIN')) return [value];
+  if (type === 'private') {
+    return [
+      normalizePemKey(value, 'private', 'PRIVATE KEY'),
+      normalizePemKey(value, 'private', 'RSA PRIVATE KEY')
+    ];
+  }
+  return [
+    normalizePemKey(value, 'public', 'PUBLIC KEY'),
+    normalizePemKey(value, 'public', 'RSA PUBLIC KEY')
+  ];
+}
+
+function normalizeAlipaySettings(source = {}) {
+  const minAmountYuan = Math.max(0.01, Number(source.minAmountYuan ?? config.alipay.minAmountYuan ?? 1) || 1);
+  const maxAmountYuan = Math.max(minAmountYuan, Number(source.maxAmountYuan ?? config.alipay.maxAmountYuan ?? 5000) || 5000);
+  return {
+    enabled: source.enabled === true || source.enabled === 'true' || source.enabled === '1',
+    appId: String(source.appId ?? config.alipay.appId ?? '').trim(),
+    gateway: String(source.gateway ?? config.alipay.gateway ?? 'https://openapi.alipay.com/gateway.do').trim(),
+    privateKey: String(source.privateKey ?? config.alipay.privateKey ?? '').replace(/\\n/g, '\n').trim(),
+    publicKey: String(source.publicKey ?? config.alipay.publicKey ?? '').replace(/\\n/g, '\n').trim(),
+    notifyUrl: String(source.notifyUrl ?? config.alipay.notifyUrl ?? '').trim(),
+    yuanbaoPerYuan: Math.max(1, Math.floor(Number(source.yuanbaoPerYuan ?? config.alipay.yuanbaoPerYuan ?? 100) || 100)),
+    minAmountYuan,
+    maxAmountYuan
+  };
+}
+
+function getAlipaySettingsSnapshot() {
+  return normalizeAlipaySettings({
+    enabled: getSettingSync('alipay_enabled', String(config.alipay.enabled)),
+    appId: getSettingSync('alipay_app_id', config.alipay.appId),
+    gateway: getSettingSync('alipay_gateway', config.alipay.gateway),
+    privateKey: getSettingSync('alipay_private_key', config.alipay.privateKey),
+    publicKey: getSettingSync('alipay_public_key', config.alipay.publicKey),
+    notifyUrl: getSettingSync('alipay_notify_url', config.alipay.notifyUrl),
+    yuanbaoPerYuan: getSettingSync('alipay_yuanbao_per_yuan', String(config.alipay.yuanbaoPerYuan)),
+    minAmountYuan: getSettingSync('alipay_min_amount_yuan', String(config.alipay.minAmountYuan)),
+    maxAmountYuan: getSettingSync('alipay_max_amount_yuan', String(config.alipay.maxAmountYuan))
+  });
+}
+
+async function getAlipaySettingsForAdmin() {
+  return normalizeAlipaySettings({
+    enabled: await getSetting('alipay_enabled', String(config.alipay.enabled)),
+    appId: await getSetting('alipay_app_id', config.alipay.appId),
+    gateway: await getSetting('alipay_gateway', config.alipay.gateway),
+    privateKey: await getSetting('alipay_private_key', config.alipay.privateKey),
+    publicKey: await getSetting('alipay_public_key', config.alipay.publicKey),
+    notifyUrl: await getSetting('alipay_notify_url', config.alipay.notifyUrl),
+    yuanbaoPerYuan: await getSetting('alipay_yuanbao_per_yuan', String(config.alipay.yuanbaoPerYuan)),
+    minAmountYuan: await getSetting('alipay_min_amount_yuan', String(config.alipay.minAmountYuan)),
+    maxAmountYuan: await getSetting('alipay_max_amount_yuan', String(config.alipay.maxAmountYuan))
+  });
+}
+
+async function saveAlipaySettingsForAdmin(settings) {
+  const normalized = normalizeAlipaySettings(settings || {});
+  await setSetting('alipay_enabled', normalized.enabled ? 'true' : 'false');
+  await setSetting('alipay_app_id', normalized.appId);
+  await setSetting('alipay_gateway', normalized.gateway);
+  await setSetting('alipay_private_key', normalized.privateKey);
+  await setSetting('alipay_public_key', normalized.publicKey);
+  await setSetting('alipay_notify_url', normalized.notifyUrl);
+  await setSetting('alipay_yuanbao_per_yuan', String(normalized.yuanbaoPerYuan));
+  await setSetting('alipay_min_amount_yuan', String(normalized.minAmountYuan));
+  await setSetting('alipay_max_amount_yuan', String(normalized.maxAmountYuan));
+  return normalized;
+}
+
+function isAlipayConfigured() {
+  const alipay = getAlipaySettingsSnapshot();
+  return Boolean(alipay.enabled && alipay.appId && alipay.privateKey && alipay.publicKey);
+}
+
+function buildAlipaySignContent(params) {
+  return Object.keys(params)
+    .filter((key) => key !== 'sign' && params[key] !== undefined && params[key] !== null && String(params[key]) !== '')
+    .sort()
+    .map((key) => `${key}=${params[key]}`)
+    .join('&');
+}
+
+function signAlipayParams(params) {
+  const alipay = getAlipaySettingsSnapshot();
+  const signContent = buildAlipaySignContent(params);
+  const candidates = getPemKeyCandidates(alipay.privateKey, 'private');
+  let lastError = null;
+  for (const key of candidates) {
+    try {
+      const signer = crypto.createSign('RSA-SHA256');
+      signer.update(signContent, 'utf8');
+      signer.end();
+      return signer.sign(key, 'base64');
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError || new Error('支付宝应用私钥无效。');
+}
+
+function verifyAlipayNotify(params) {
+  if (!isAlipayConfigured()) return false;
+  const sign = String(params?.sign || '');
+  if (!sign) return false;
+  const alipay = getAlipaySettingsSnapshot();
+  const signContent = buildAlipaySignContent(params);
+  const candidates = getPemKeyCandidates(alipay.publicKey, 'public');
+  for (const key of candidates) {
+    try {
+      const verifier = crypto.createVerify('RSA-SHA256');
+      verifier.update(signContent, 'utf8');
+      verifier.end();
+      if (verifier.verify(key, sign, 'base64')) return true;
+    } catch {
+      // try the next key wrapper
+    }
+  }
+  return false;
+}
+
+function getAlipayNotifyUrl(req) {
+  const alipay = getAlipaySettingsSnapshot();
+  if (alipay.notifyUrl) return alipay.notifyUrl;
+  return `${getPublicBaseUrl(req)}/api/recharge/alipay/notify`;
+}
+
+function buildAlipayOutTradeNo(userId) {
+  const uid = Math.max(1, Math.floor(Number(userId) || 0));
+  return `YB${Date.now()}${uid}${crypto.randomBytes(4).toString('hex').toUpperCase()}`.slice(0, 64);
+}
+
+async function callAlipay(method, bizContent, req = null) {
+  const alipay = getAlipaySettingsSnapshot();
+  if (!isAlipayConfigured()) throw new Error('支付宝当面付未启用或配置不完整。');
+  const params = {
+    app_id: alipay.appId,
+    method,
+    format: 'JSON',
+    charset: 'utf-8',
+    sign_type: 'RSA2',
+    timestamp: formatAlipayTimestamp(new Date()),
+    version: '1.0',
+    biz_content: JSON.stringify(bizContent)
+  };
+  if (method === 'alipay.trade.precreate') {
+    params.notify_url = getAlipayNotifyUrl(req);
+  }
+  params.sign = signAlipayParams(params);
+  const response = await fetch(alipay.gateway, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+    body: new URLSearchParams(params)
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data) throw new Error('支付宝网关请求失败。');
+  const rootKey = `${method.replace(/\./g, '_')}_response`;
+  const root = data[rootKey];
+  if (!root || root.code !== '10000') {
+    console.warn('[alipay] gateway error:', {
+      method,
+      code: root?.code,
+      msg: root?.msg,
+      subCode: root?.sub_code,
+      subMsg: root?.sub_msg,
+      outTradeNo: bizContent?.out_trade_no || ''
+    });
+    throw new Error(root?.sub_msg || root?.msg || '支付宝接口返回失败。');
+  }
+  return root;
+}
+
+function formatAlipayTimestamp(date) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function normalizeRechargeAmountYuan(value) {
+  const alipay = getAlipaySettingsSnapshot();
+  const amount = Math.round(Number(value || 0) * 100) / 100;
+  const min = Number(alipay.minAmountYuan || 1);
+  const max = Number(alipay.maxAmountYuan || 5000);
+  if (!Number.isFinite(amount) || amount < min || amount > max) return null;
+  return amount;
+}
+app.use(express.static(publicDir));
 app.use(ADMIN_BASE, express.static(path.join(__dirname, '..', 'public', 'admin')));
 app.use('/img', express.static(path.join(__dirname, '..', 'img')));
+app.get('/api/healthz', (req, res) => {
+  res.json({
+    ok: true,
+    uptimeSec: Math.floor(process.uptime()),
+    pid: process.pid,
+    timestamp: Date.now()
+  });
+});
+app.get('/api/readyz', (req, res) => {
+  const now = Date.now();
+  const snapshotAgeMs = runtimeHealthSnapshot.at > 0 ? Math.max(0, now - runtimeHealthSnapshot.at) : null;
+  const ready = Boolean(
+    server.listening
+    && !shuttingDown
+    && (snapshotAgeMs == null || snapshotAgeMs < READYZ_HEALTH_STALE_MS)
+    && runtimeHealthSnapshot.loopLagMs < READYZ_LOOP_LAG_FAIL_MS
+    && runtimeHealthSnapshot.heapRatio < READYZ_HEAP_FAIL_RATIO
+  );
+  const degraded = Boolean(
+    !shuttingDown
+    && (
+      runtimeHealthSnapshot.guardMode === 'aggressive'
+      || runtimeHealthSnapshot.loopLagMs >= RUNTIME_LAG_CRITICAL_MS
+      || runtimeHealthSnapshot.heapRatio >= RUNTIME_HEAP_CRITICAL_RATIO
+    )
+  );
+  const payload = {
+    ok: ready,
+    listening: server.listening,
+    shuttingDown,
+    degraded,
+    uptimeSec: Math.floor(process.uptime()),
+    pid: process.pid,
+    runtime: {
+      lastHealthAt: runtimeHealthSnapshot.at || null,
+      snapshotAgeMs,
+      loopLagMs: runtimeHealthSnapshot.loopLagMs,
+      heapRatio: Number(runtimeHealthSnapshot.heapRatio.toFixed(4)),
+      guardMode: runtimeHealthSnapshot.guardMode,
+      pendingPlayerSaves: runtimeHealthSnapshot.pendingPlayerSaves,
+      mobStateCacheSize: runtimeHealthSnapshot.mobStateCacheSize,
+      onlineCount: runtimeHealthSnapshot.onlineCount
+    }
+  };
+  res.status(ready ? 200 : 503).json(payload);
+});
+app.get(['/reset-password', '/reset-password/'], (req, res) => {
+  res.sendFile(publicIndexPath);
+});
 if (ADMIN_BASE !== '/admin') {
   app.use((req, res, next) => {
     if (req.url.startsWith(`${ADMIN_BASE}/`)) {
@@ -1193,34 +1509,42 @@ app.get('/api/invite/stats', async (req, res) => {
 });
 
 app.post('/api/register', async (req, res) => {
-  const { username, password, email, captchaToken, captchaCode, inviteCode } = req.body || {};
-  if (!username || !password) return res.status(400).json({ error: '账号或密码缺失。' });
-  if (!verifyCaptcha(captchaToken, captchaCode)) {
-    return res.status(400).json({ error: '验证码错误。' });
+  try {
+    const { username, password, email, captchaToken, captchaCode, inviteCode } = req.body || {};
+    if (!username || !password) return res.status(400).json({ error: '账号或密码缺失。' });
+    if (!verifyCaptcha(captchaToken, captchaCode)) {
+      return res.status(400).json({ error: '验证码错误。' });
+    }
+    const trimmedUsername = String(username || '').trim();
+    const exists = await getUserByName(trimmedUsername);
+    if (exists) return res.status(400).json({ error: '账号已存在。' });
+    const normalizedEmail = String(email || '').trim();
+    if (normalizedEmail) {
+      const emailExists = await knex('users').where({ email: normalizedEmail }).first();
+      if (emailExists) return res.status(400).json({ error: '该邮箱已被使用。' });
+    }
+    let inviterUser = null;
+    const parsedInviteUserId = parseInviteCode(inviteCode);
+    if (String(inviteCode || '').trim()) {
+      if (!parsedInviteUserId) return res.status(400).json({ error: '邀请码无效。' });
+      inviterUser = await knex('users').where({ id: parsedInviteUserId }).first();
+      if (!inviterUser) return res.status(400).json({ error: '邀请人不存在。' });
+    }
+    const newUserId = await createUser(trimmedUsername, password, normalizedEmail || null);
+    if (inviterUser && inviterUser.id !== newUserId) {
+      await bindInviteForUser(newUserId, inviterUser.id, {
+        inviterUsername: inviterUser.username || '',
+        inviteCode: String(inviteCode || '').trim(),
+        source: 'register'
+      });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(`[register] requestId=${req.requestId || '-'} failed:`, err);
+    if (!res.headersSent) {
+      res.status(500).json({ error: '注册失败，请稍后重试或联系管理员。' });
+    }
   }
-  const trimmedUsername = String(username || '').trim();
-  const exists = await getUserByName(trimmedUsername);
-  if (exists) return res.status(400).json({ error: '账号已存在。' });
-  if (email && email.trim()) {
-    const emailExists = await knex('users').where({ email: email.trim() }).first();
-    if (emailExists) return res.status(400).json({ error: '该邮箱已被使用。' });
-  }
-  let inviterUser = null;
-  const parsedInviteUserId = parseInviteCode(inviteCode);
-  if (String(inviteCode || '').trim()) {
-    if (!parsedInviteUserId) return res.status(400).json({ error: '邀请码无效。' });
-    inviterUser = await knex('users').where({ id: parsedInviteUserId }).first();
-    if (!inviterUser) return res.status(400).json({ error: '邀请人不存在。' });
-  }
-  const newUserId = await createUser(trimmedUsername, password, email || null);
-  if (inviterUser && inviterUser.id !== newUserId) {
-    await bindInviteForUser(newUserId, inviterUser.id, {
-      inviterUsername: inviterUser.username || '',
-      inviteCode: String(inviteCode || '').trim(),
-      source: 'register'
-    });
-  }
-  res.json({ ok: true });
 });
 
 app.post('/api/login', async (req, res) => {
@@ -1289,9 +1613,7 @@ app.post('/api/password-reset/request', async (req, res) => {
   const resetToken = await createPasswordResetToken(user.id);
   
   // 构建重置URL
-  const protocol = req.protocol;
-  const host = req.get('host');
-  const resetUrl = `${protocol}://${host}/reset-password?token=${resetToken}`;
+  const resetUrl = `${getPublicBaseUrl(req)}/reset-password?token=${encodeURIComponent(resetToken)}`;
   
   try {
     await sendPasswordResetEmail(user.email, resetUrl);
@@ -1430,6 +1752,144 @@ app.post('/api/character/delete', async (req, res) => {
     .del();
   await deleteCharacter(session.user_id, exactName, targetRealmId);
   res.json({ ok: true });
+});
+
+app.get('/api/recharge/alipay/config', (req, res) => {
+  const alipay = getAlipaySettingsSnapshot();
+  res.json({
+    ok: true,
+    enabled: isAlipayConfigured(),
+    yuanbaoPerYuan: alipay.yuanbaoPerYuan,
+    minAmountYuan: alipay.minAmountYuan,
+    maxAmountYuan: alipay.maxAmountYuan
+  });
+});
+
+app.post('/api/recharge/alipay/create', async (req, res) => {
+  try {
+    const { token, characterName, realmId: rawRealmId, amountYuan: rawAmountYuan } = req.body || {};
+    const session = await getSession(token);
+    if (!session) return res.status(401).json({ error: '登录已过期。' });
+    if (!isAlipayConfigured()) return res.status(400).json({ error: '支付宝当面付未启用。' });
+
+    const realmId = Math.max(1, Math.floor(Number(rawRealmId || 1) || 1));
+    const charName = String(characterName || '').trim();
+    if (!charName) return res.status(400).json({ error: '缺少角色名。' });
+    const character = await loadCharacter(session.user_id, charName, realmId);
+    if (!character) return res.status(404).json({ error: '角色不存在。' });
+
+    const amountYuan = normalizeRechargeAmountYuan(rawAmountYuan);
+    const alipay = getAlipaySettingsSnapshot();
+    if (amountYuan == null) {
+      return res.status(400).json({ error: `充值金额需在 ${alipay.minAmountYuan}-${alipay.maxAmountYuan} 元之间。` });
+    }
+    const yuanbao = Math.max(1, Math.floor(amountYuan * alipay.yuanbaoPerYuan));
+    const outTradeNo = buildAlipayOutTradeNo(session.user_id);
+    await createAlipayRechargeOrder({
+      outTradeNo,
+      userId: session.user_id,
+      realmId,
+      charName,
+      yuanbao,
+      amountYuan,
+      qrCode: ''
+    });
+
+    const subject = `元宝充值 ${yuanbao}`;
+    const ali = await callAlipay('alipay.trade.precreate', {
+      out_trade_no: outTradeNo,
+      total_amount: amountYuan.toFixed(2),
+      subject,
+      timeout_express: '30m'
+    }, req);
+    await markAlipayRechargeOrderCreated(outTradeNo, ali.qr_code || '');
+    res.json({
+      ok: true,
+      outTradeNo,
+      amountYuan: amountYuan.toFixed(2),
+      yuanbao,
+      qrCode: ali.qr_code || ''
+    });
+  } catch (err) {
+    console.warn('创建支付宝当面付订单失败:', err?.message || err);
+    res.status(500).json({ error: err?.message || '创建支付宝订单失败。' });
+  }
+});
+
+app.get('/api/recharge/alipay/status', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || String(req.query.token || '');
+    const session = await getSession(token);
+    if (!session) return res.status(401).json({ error: '登录已过期。' });
+    const outTradeNo = String(req.query.outTradeNo || '').trim();
+    const order = await getAlipayRechargeOrder(outTradeNo);
+    if (!order || Math.floor(Number(order.user_id || 0)) !== Math.floor(Number(session.user_id || 0))) {
+      return res.status(404).json({ error: '订单不存在。' });
+    }
+    let current = order;
+    if (current.status === 'created') {
+      current = await syncAlipayOrderPayment(current, req);
+    }
+    if (current.status === 'paid' && !current.credited_at) {
+      current = await creditPaidAlipayOrder(current);
+    }
+    res.json({
+      ok: true,
+      outTradeNo: current.out_trade_no,
+      status: current.status,
+      yuanbao: Number(current.yuanbao || 0),
+      amountYuan: Number(current.amount_yuan || 0).toFixed(2),
+      paidAt: current.paid_at || null,
+      creditedAt: current.credited_at || null
+    });
+  } catch (err) {
+    console.warn('查询支付宝充值订单失败:', err?.message || err);
+    res.status(500).json({ error: err?.message || '查询订单失败。' });
+  }
+});
+
+app.get('/api/recharge/alipay/notify', (req, res) => {
+  res.type('text/plain').send('支付宝当面付异步通知地址正常。请在支付宝开放平台配置此 URL，支付宝会通过 POST 请求通知支付结果。');
+});
+
+app.post('/api/recharge/alipay/notify', async (req, res) => {
+  try {
+    const payload = req.body || {};
+    if (!verifyAlipayNotify(payload)) {
+      console.warn('支付宝回调验签失败');
+      return res.send('failure');
+    }
+    const alipay = getAlipaySettingsSnapshot();
+    if (String(payload.app_id || '') !== alipay.appId) {
+      console.warn('支付宝回调 app_id 不匹配');
+      return res.send('failure');
+    }
+    const tradeStatus = String(payload.trade_status || '');
+    if (!['TRADE_SUCCESS', 'TRADE_FINISHED'].includes(tradeStatus)) {
+      return res.send('success');
+    }
+    const outTradeNo = String(payload.out_trade_no || '').trim();
+    const order = await getAlipayRechargeOrder(outTradeNo);
+    if (!order) return res.send('failure');
+    const paidCents = Math.round(Number(payload.total_amount || 0) * 100);
+    const orderCents = Math.round(Number(order.amount_yuan || 0) * 100);
+    if (!paidCents || paidCents !== orderCents) {
+      console.warn(`支付宝回调金额不匹配: order=${outTradeNo} paid=${payload.total_amount} expected=${order.amount_yuan}`);
+      return res.send('failure');
+    }
+    let paidOrder = await markAlipayRechargeOrderPaid(outTradeNo, {
+      tradeNo: String(payload.trade_no || ''),
+      buyerLogonId: String(payload.buyer_logon_id || ''),
+      notifyPayload: payload
+    });
+    if (paidOrder && paidOrder.status === 'paid' && !paidOrder.credited_at) {
+      paidOrder = await creditPaidAlipayOrder(paidOrder);
+    }
+    return res.send(paidOrder?.status === 'credited' ? 'success' : 'failure');
+  } catch (err) {
+    console.warn('处理支付宝回调失败:', err?.message || err);
+    return res.send('failure');
+  }
 });
 
 app.get('/api/mail', async (req, res) => {
@@ -1936,6 +2396,122 @@ app.get('/admin/users', async (req, res) => {
   const search = String(req.query.search || '');
   const result = await listUsers(page, limit, search);
   res.json({ ok: true, ...result });
+});
+
+function parseJsonSafeForAdmin(value, fallback) {
+  if (value == null) return fallback;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function summarizeAdminItemEntry(entry) {
+  if (!entry || !entry.id) return null;
+  const tpl = ITEM_TEMPLATES[entry.id] || {};
+  return {
+    id: String(entry.id),
+    name: tpl.name || String(entry.id),
+    qty: Math.max(1, Math.floor(Number(entry.qty || 1))),
+    type: tpl.type || '',
+    slot: tpl.slot || '',
+    rarity: tpl.rarity || '',
+    refineLevel: Math.max(0, Math.floor(Number(entry.refine_level || 0))),
+    growthLevel: Math.max(0, Math.floor(Number(entry.growth_level || 0))),
+    baseRollPct: entry.base_roll_pct == null ? null : Math.max(0, Math.floor(Number(entry.base_roll_pct || 0))),
+    effects: entry.effects && typeof entry.effects === 'object' ? entry.effects : null,
+    durability: entry.durability == null ? null : Math.floor(Number(entry.durability || 0)),
+    maxDurability: entry.max_durability == null ? null : Math.floor(Number(entry.max_durability || 0))
+  };
+}
+
+function summarizeAdminEquipment(equipment) {
+  const source = equipment && typeof equipment === 'object' ? equipment : {};
+  const labels = {
+    weapon: '武器',
+    chest: '衣服',
+    head: '头盔',
+    waist: '腰带',
+    feet: '靴子',
+    neck: '项链',
+    ring_left: '戒指(左)',
+    ring_right: '戒指(右)',
+    bracelet_left: '手镯(左)',
+    bracelet_right: '手镯(右)'
+  };
+  return Object.entries(labels).map(([slot, label]) => ({
+    slot,
+    label,
+    item: summarizeAdminItemEntry(source[slot])
+  }));
+}
+
+function summarizeAdminPets(flags) {
+  const petState = flags?.pet && typeof flags.pet === 'object' ? flags.pet : {};
+  const pets = Array.isArray(petState.pets) ? petState.pets : [];
+  return pets.slice(0, 20).map((pet) => ({
+    id: String(pet?.id || ''),
+    name: String(pet?.name || pet?.role || pet?.species || '宠物'),
+    rarity: String(pet?.rarity || ''),
+    level: Math.max(1, Math.floor(Number(pet?.level || pet?.summonLevel || 1))),
+    active: String(pet?.id || '') === String(petState.activePetId || ''),
+    hp: Math.max(0, Math.floor(Number(pet?.hp || 0))),
+    maxHp: Math.max(0, Math.floor(Number(pet?.max_hp || pet?.maxHp || 0))),
+    skills: Array.isArray(pet?.skills) ? pet.skills.map((id) => String(id)).filter(Boolean) : [],
+    equipment: summarizeAdminEquipment(pet?.equipment || {}).filter((entry) => entry.item)
+  }));
+}
+
+app.get('/admin/users/:id/detail', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const userId = Math.max(0, Math.floor(Number(req.params.id || 0)));
+  if (!userId) return res.status(400).json({ error: '无效用户ID。' });
+  const user = await knex('users').where({ id: userId }).select('id', 'username', 'email', 'is_admin', 'created_at').first();
+  if (!user) return res.status(404).json({ error: '用户不存在。' });
+  const rows = await knex('characters')
+    .where({ user_id: userId })
+    .select('id', 'realm_id', 'name', 'class', 'level', 'exp', 'gold', 'yuanbao', 'hp', 'mp', 'max_hp', 'max_mp', 'position_json', 'inventory_json', 'warehouse_json', 'equipment_json', 'skills_json', 'flags_json', 'updated_at')
+    .orderBy('realm_id', 'asc')
+    .orderBy('level', 'desc');
+  const characters = rows.map((row) => {
+    const flags = parseJsonSafeForAdmin(row.flags_json, {});
+    const inventory = parseJsonSafeForAdmin(row.inventory_json, []);
+    const warehouse = parseJsonSafeForAdmin(row.warehouse_json, []);
+    const equipment = parseJsonSafeForAdmin(row.equipment_json, {});
+    const skills = parseJsonSafeForAdmin(row.skills_json, []);
+    return {
+      id: row.id,
+      realmId: row.realm_id || 1,
+      name: row.name,
+      classId: row.class,
+      level: row.level,
+      exp: row.exp,
+      gold: row.gold,
+      yuanbao: row.yuanbao || 0,
+      hp: row.hp,
+      mp: row.mp,
+      maxHp: row.max_hp,
+      maxMp: row.max_mp,
+      position: parseJsonSafeForAdmin(row.position_json, {}),
+      cultivationLevel: Math.floor(Number(flags?.cultivationLevel ?? -1)),
+      vip: {
+        vipExpiresAt: Number(flags?.vipExpiresAt || 0),
+        svipExpiresAt: Number(flags?.svipExpiresAt || 0),
+        offlineManaged: Boolean(flags?.offlineManagedAuto || flags?.offlineManagedPending),
+        autoFullEnabled: Boolean(flags?.autoFullEnabled)
+      },
+      equipment: summarizeAdminEquipment(equipment),
+      inventory: Array.isArray(inventory) ? inventory.map(summarizeAdminItemEntry).filter(Boolean).slice(0, 120) : [],
+      warehouse: Array.isArray(warehouse) ? warehouse.map(summarizeAdminItemEntry).filter(Boolean).slice(0, 120) : [],
+      pets: summarizeAdminPets(flags),
+      skills: Array.isArray(skills) ? skills.slice(0, 80) : [],
+      updatedAt: row.updated_at
+    };
+  });
+  res.json({ ok: true, user, characters });
 });
 
 app.post('/admin/users/delete', async (req, res) => {
@@ -3148,6 +3724,20 @@ app.post('/admin/svip-settings/update', async (req, res) => {
   setSvipPricesRuntime(prices);
   const next = await getSvipPrices();
   res.json({ ok: true, prices: next });
+});
+
+app.get('/admin/alipay-settings', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const settings = await getAlipaySettingsForAdmin();
+  res.json({ ok: true, settings });
+});
+
+app.post('/admin/alipay-settings/update', async (req, res) => {
+  const admin = await requireAdmin(req);
+  if (!admin) return res.status(401).json({ error: '无管理员权限。' });
+  const settings = await saveAlipaySettingsForAdmin(req.body?.settings || {});
+  res.json({ ok: true, settings });
 });
 
 app.get('/admin/state-throttle-status', async (req, res) => {
@@ -5029,7 +5619,7 @@ async function cleanupSameDayBackups(dateStr, currentFileName) {
 
 function scheduleAutoBackup() {
   // 每天凌晨0点执行
-  cron.schedule('0 0 * * *', async () => {
+  scheduleSafeCron('0 0 * * *', 'auto-backup', async () => {
     await cleanupConsignmentHistory();
     await performAutoBackup();
   });
@@ -5242,7 +5832,7 @@ async function refreshDailyLucky() {
 
 // 设置排行榜自动更新
 function setupRankUpdate() {
-  cron.schedule('0 0 * * *', async () => {
+  scheduleSafeCron('0 0 * * *', 'rank-title-refresh', async () => {
     await updateRankTitles();
   });
   console.log('[Rank] 已设置每日0点自动更新排行榜称号');
@@ -5254,7 +5844,7 @@ function setupRankUpdate() {
 }
 
 function setupDailyLucky() {
-  cron.schedule('0 0 * * *', async () => {
+  scheduleSafeCron('0 0 * * *', 'daily-lucky-refresh', async () => {
     await refreshDailyLucky();
   });
   console.log('[DailyLucky] 已设置每日0点抽取幸运玩家');
@@ -6132,6 +6722,9 @@ const RUNTIME_HEAP_WARN_RATIO = 0.80;
 const RUNTIME_HEAP_CRITICAL_RATIO = 0.88;
 const RUNTIME_LAG_WARN_MS = 100;
 const RUNTIME_LAG_CRITICAL_MS = 200;
+const READYZ_HEALTH_STALE_MS = Math.max(3 * RUNTIME_HEALTH_INTERVAL_MS, 180 * 1000);
+const READYZ_LOOP_LAG_FAIL_MS = 1500;
+const READYZ_HEAP_FAIL_RATIO = 0.98;
 const RUNTIME_MOB_ROWS_SAMPLE_INTERVAL_MS = 5 * 60 * 1000;
 const RUNTIME_GUARD_HOLD_NORMAL_MS = 2 * 60 * 1000;
 const RUNTIME_GUARD_HOLD_AGGRESSIVE_MS = 4 * 60 * 1000;
@@ -6140,6 +6733,15 @@ let runtimeHealthExpectedAt = 0;
 let runtimeCacheCleanupLastAt = 0;
 let runtimeGuardMode = 'off';
 let runtimeGuardUntilAt = 0;
+let runtimeHealthSnapshot = {
+  at: 0,
+  loopLagMs: 0,
+  heapRatio: 0,
+  guardMode: 'off',
+  pendingPlayerSaves: 0,
+  mobStateCacheSize: 0,
+  onlineCount: 0
+};
 
 function activateRuntimeGuard(mode, holdMs, now = Date.now()) {
   const normalizedMode = mode === 'aggressive' ? 'aggressive' : 'normal';
@@ -6942,6 +7544,32 @@ function getPlayerHealthBreakdown() {
   return summary;
 }
 
+function captureRuntimeHealthSnapshot(details = {}) {
+  runtimeHealthSnapshot = {
+    at: Date.now(),
+    loopLagMs: Math.max(0, Number(details.loopLagMs || 0)),
+    heapRatio: Math.max(0, Number(details.heapRatio || 0)),
+    guardMode: details.guardMode === 'aggressive' ? 'aggressive' : (details.guardMode === 'normal' ? 'normal' : 'off'),
+    pendingPlayerSaves: Math.max(0, Math.floor(Number(details.pendingPlayerSaves || 0))),
+    mobStateCacheSize: Math.max(0, Math.floor(Number(details.mobStateCacheSize || 0))),
+    onlineCount: Math.max(0, Math.floor(Number(details.onlineCount || 0)))
+  };
+}
+
+function logProcessFault(kind, err) {
+  const memory = process.memoryUsage();
+  const rssMb = (memory.rss / (1024 * 1024)).toFixed(1);
+  const heapUsedMb = (memory.heapUsed / (1024 * 1024)).toFixed(1);
+  const heapTotalMb = (memory.heapTotal / (1024 * 1024)).toFixed(1);
+  console.error(
+    `[process] ${kind} uptime=${Math.floor(process.uptime())}s rss=${rssMb}MB heap=${heapUsedMb}/${heapTotalMb}MB `
+    + `shuttingDown=${shuttingDown} listening=${server.listening}`
+  );
+  if (err !== undefined) {
+    console.error(err);
+  }
+}
+
 async function logRuntimeHealth(expectedAt = Date.now()) {
   const now = Date.now();
   const loopLagMs = Math.max(0, now - expectedAt);
@@ -6991,6 +7619,14 @@ async function logRuntimeHealth(expectedAt = Date.now()) {
   const playerHealth = getPlayerHealthBreakdown();
   const realmStateCount = realmStates.size;
   const guardMode = getRuntimeGuardMode(now);
+  captureRuntimeHealthSnapshot({
+    loopLagMs,
+    heapRatio,
+    guardMode,
+    pendingPlayerSaves: pendingPlayerSaves.size,
+    mobStateCacheSize: mobStatePersistCache.size,
+    onlineCount
+  });
   const guardTag = guardMode === 'off'
     ? ''
     : ` guard=${guardMode === 'aggressive' ? 'aggr' : 'normal'}`;
@@ -7064,10 +7700,44 @@ function startRuntimeHealthLogging() {
   }, RUNTIME_HEALTH_INTERVAL_MS);
 }
 
+function logAsyncTaskError(taskName, err) {
+  console.warn(`[timer] ${taskName} failed:`, err);
+}
+
+function guardAsyncTask(taskName, task) {
+  return async (...args) => {
+    try {
+      await task(...args);
+    } catch (err) {
+      logAsyncTaskError(taskName, err);
+    }
+  };
+}
+
+function setSafeInterval(taskName, task, intervalMs) {
+  const guardedTask = guardAsyncTask(taskName, task);
+  return setInterval(() => {
+    void guardedTask();
+  }, intervalMs);
+}
+
+function setSafeTimeout(taskName, task, delayMs) {
+  const guardedTask = guardAsyncTask(taskName, task);
+  return setTimeout(() => {
+    void guardedTask();
+  }, delayMs);
+}
+
+function scheduleSafeCron(expression, taskName, task, options) {
+  const guardedTask = guardAsyncTask(taskName, task);
+  return cron.schedule(expression, () => {
+    void guardedTask();
+  }, options);
+}
+
 function cultivationRewardMultiplier(player) {
   const level = Math.floor(Number(player?.flags?.cultivationLevel ?? -1));
-  if (Number.isNaN(level) || level < 0) return 1;
-  return 1 + (level + 1) * 0.1;
+  return getCultivationRewardMultiplier(level);
 }
 
 function getExpCardMultiplier(player, now = Date.now()) {
@@ -8624,10 +9294,6 @@ async function flushPendingPlayerSaves() {
   if (pendingPlayerSaves.size > 0) {
     schedulePendingPlayerSaveFlush(nextDelayMs || PLAYER_SAVE_DEBOUNCE_MS);
   }
-  const elapsed = Date.now() - t0;
-  if (elapsed > 50) {
-    console.log(`[perf] flushPendingPlayerSaves ${elapsed}ms writes=${writes} dirtyWrites=${dirtyWrites}`);
-  }
 }
 
 async function runMobRespawnCleanupSweep(options = {}) {
@@ -9702,12 +10368,11 @@ const consignApi = {
   }
 };
 
-const rechargeApi = {
-  async redeem(player, code) {
-    const used = await useRechargeCard(code, player.userId, player.name);
-    if (!used) return { ok: false, msg: '卡密无效或已使用。' };
-    const amount = Math.max(0, Math.floor(Number(used.amount || 0)));
-    if (!amount) return { ok: false, msg: '卡密金额异常。' };
+async function grantRechargeToPlayer(player, amount, options = {}) {
+  const source = String(options.source || 'auto_recharge');
+  const baseAmount = Math.max(0, Math.floor(Number(amount || 0)));
+  if (!player || !player.userId || !player.name) return { ok: false, msg: '角色不存在。' };
+  if (!baseAmount) return { ok: false, msg: '充值金额异常。' };
     const firstRechargeCfg = getFirstRechargeWelfareConfigSnapshot();
     const playerRealmId = Math.max(1, Math.floor(Number(player?.realmId || 1) || 1));
     const rewardMarkedInRealm = await hasFirstRechargeRewardMarkerByRealm(player.userId, playerRealmId);
@@ -9719,12 +10384,12 @@ const rechargeApi = {
     const inviteRate = Math.max(0, Math.min(1, Number(inviteCfg.bonusRate || 0)));
     const canApplyInviteFirstRechargeBonus = Boolean(inviteCfg.enabled !== false && inviteBinding && !inviteBonusAlreadyProcessed);
     const inviteExtraYuanbao = canApplyInviteFirstRechargeBonus
-      ? Math.max(0, Math.floor(amount * inviteRate))
+      ? Math.max(0, Math.floor(baseAmount * inviteRate))
       : 0;
     const inviterRebateYuanbao = canApplyInviteFirstRechargeBonus
-      ? Math.max(0, Math.floor(amount * inviteRate))
+      ? Math.max(0, Math.floor(baseAmount * inviteRate))
       : 0;
-    player.yuanbao = (player.yuanbao || 0) + amount + inviteExtraYuanbao;
+    player.yuanbao = (player.yuanbao || 0) + baseAmount + inviteExtraYuanbao;
     let firstRechargeMsg = '';
     if (canApplyInviteFirstRechargeBonus && inviteBinding) {
       let rebateResult = null;
@@ -9742,7 +10407,7 @@ const rechargeApi = {
       }
       if (rebateResult?.ok && inviterRebateYuanbao > 0) {
         await markInviteRebateIssuedForInvitee(player.userId, {
-          source: 'auto_recharge',
+          source,
           inviterUserId: inviteBinding.inviterUserId,
           inviteeCharName: player.name,
           rebateYuanbao: inviterRebateYuanbao,
@@ -9753,7 +10418,7 @@ const rechargeApi = {
       await markInviteFirstRechargeProcessed(player.userId, {
         inviterUserId: inviteBinding.inviterUserId,
         inviteeCharName: player.name,
-        sourceAmount: amount,
+        sourceAmount: baseAmount,
         bonusYuanbao: inviteExtraYuanbao,
         rebateYuanbao: inviterRebateYuanbao
       });
@@ -9768,16 +10433,80 @@ const rechargeApi = {
     if (isFirstRecharge) {
       const grant = grantFirstRechargeWelfareToPlayer(player, firstRechargeCfg);
       const rewardText = Array.isArray(grant.rewardText) ? grant.rewardText : [];
-      await markFirstRechargeRewardIssued(player.userId, { source: 'auto_recharge', charName: player.name });
-      await markFirstRechargeRewardIssuedByRealm(player.userId, playerRealmId, { source: 'auto_recharge', charName: player.name });
+      await markFirstRechargeRewardIssued(player.userId, { source, charName: player.name });
+      await markFirstRechargeRewardIssuedByRealm(player.userId, playerRealmId, { source, charName: player.name });
       if (rewardText.length) {
         firstRechargeMsg = `\n首充福利已发放：${rewardText.join('、')}。`;
       }
     }
-    await addSponsor(player.name, amount);
+    await addSponsor(player.name, baseAmount);
     await savePlayer(player, { immediate: true }); // 充值后立即保存
     player.forceStateRefresh = true;
-    return { ok: true, msg: `充值成功，获得 ${amount + inviteExtraYuanbao} 元宝。${inviteBonusMsg}${firstRechargeMsg}`.trim() };
+    player.send?.(`充值到账：元宝+${baseAmount + inviteExtraYuanbao}。${inviteBonusMsg}${firstRechargeMsg}`.trim());
+    return { ok: true, msg: `充值成功，获得 ${baseAmount + inviteExtraYuanbao} 元宝。${inviteBonusMsg}${firstRechargeMsg}`.trim() };
+}
+
+async function grantRechargeToCharacter({ userId, realmId = 1, charName, amount, source = 'alipay_recharge' }) {
+  const uid = Math.max(1, Math.floor(Number(userId) || 0));
+  const rid = Math.max(1, Math.floor(Number(realmId || 1) || 1));
+  const name = String(charName || '').trim();
+  const online = playersByName(name, rid);
+  if (online && Math.max(1, Math.floor(Number(online.userId) || 0)) === uid) {
+    return grantRechargeToPlayer(online, amount, { source });
+  }
+  const stored = await loadCharacter(uid, name, rid);
+  if (!stored) return { ok: false, msg: '角色不存在。' };
+  stored.userId = uid;
+  stored.realmId = rid;
+  stored.send = () => {};
+  return grantRechargeToPlayer(stored, amount, { source });
+}
+
+async function creditPaidAlipayOrder(order) {
+  if (!order || order.credited_at || order.status === 'credited') return order;
+  if (order.status !== 'paid') return order;
+  const result = await grantRechargeToCharacter({
+    userId: order.user_id,
+    realmId: order.realm_id || 1,
+    charName: order.char_name,
+    amount: order.yuanbao,
+    source: 'alipay_recharge'
+  });
+  if (!result?.ok) throw new Error(result?.msg || '支付宝订单到账失败。');
+  return markAlipayRechargeOrderCredited(order.out_trade_no);
+}
+
+async function syncAlipayOrderPayment(order, req = null) {
+  if (!order || order.status !== 'created') return order;
+  let query = null;
+  try {
+    query = await callAlipay('alipay.trade.query', {
+      out_trade_no: order.out_trade_no
+    }, req);
+  } catch {
+    return order;
+  }
+  const tradeStatus = String(query.trade_status || '');
+  if (!['TRADE_SUCCESS', 'TRADE_FINISHED'].includes(tradeStatus)) return order;
+  const paidCents = Math.round(Number(query.total_amount || 0) * 100);
+  const orderCents = Math.round(Number(order.amount_yuan || 0) * 100);
+  if (!paidCents || paidCents !== orderCents) {
+    throw new Error('支付宝查单金额与本地订单不一致。');
+  }
+  return markAlipayRechargeOrderPaid(order.out_trade_no, {
+    tradeNo: String(query.trade_no || ''),
+    buyerLogonId: String(query.buyer_logon_id || ''),
+    notifyPayload: query
+  });
+}
+
+const rechargeApi = {
+  async redeem(player, code) {
+    const used = await useRechargeCard(code, player.userId, player.name);
+    if (!used) return { ok: false, msg: '卡密无效或已使用。' };
+    const amount = Math.max(0, Math.floor(Number(used.amount || 0)));
+    if (!amount) return { ok: false, msg: '卡密金额异常。' };
+    return grantRechargeToPlayer(player, amount, { source: 'auto_recharge' });
   }
 };
 
@@ -11394,6 +12123,7 @@ function tryAutoFullBossMove(player) {
       player.flags.autoFullCrossBossBlockedId = null;
     }
     player.flags.autoFullLastMoveAt = now;
+    maybeTriggerMapRandomEvent(player, { send: (message) => notifyPlayerIfPossible(player, message), now });
     return 'moved';
   }
   return null;
@@ -11524,6 +12254,7 @@ function tryAutoFullAction(player, roomMobs) {
       if (movePlayerToRoom(player, targetZoneId, targetRoomId)) {
         player.flags.autoFullLastMoveAt = now;
         player.flags.autoFullRepathAfterDeath = false;
+        maybeTriggerMapRandomEvent(player, { send: (message) => notifyPlayerIfPossible(player, message), now });
         return 'moved';
       }
     }
@@ -11574,11 +12305,22 @@ function tryAutoFullAction(player, roomMobs) {
     if (player.position.zone !== targetZoneId || player.position.room !== targetRoomId) {
       if (movePlayerToRoom(player, targetZoneId, targetRoomId)) {
         player.flags.autoFullLastMoveAt = now;
+        maybeTriggerMapRandomEvent(player, { send: (message) => notifyPlayerIfPossible(player, message), now });
         return 'moved';
       }
     }
   }
   return null;
+}
+
+function notifyPlayerIfPossible(player, message) {
+  if (player && typeof player.send === 'function') {
+    try {
+      player.send(message);
+    } catch {
+      // ignore notification failures for managed/offline players
+    }
+  }
 }
 
 function pickPlayerBonusConfig(playerBonusConfig, playerCount) {
@@ -14010,17 +14752,16 @@ function calcPetAssistDamage(player, mob) {
   const pet = getActivePet(player);
   if (!pet || !mob || Number(mob.hp || 0) <= 0) return null;
   const aptitude = pet.aptitude || {};
-  const equipStats = getPetEquipmentCombatStats(pet);
-  const petTrainingBonus = getPetTrainingBonus(pet);
+  const battleStats = getPetBattleStatInputs(pet);
   const growth = Math.max(0.8, Number(pet.growth || 1));
   const level = Math.max(1, Math.floor(Number(pet.level || 1)));
   const battleType = normalizePetBattleType(pet, aptitude);
   const mobDef = Math.max(0, Number(mob.def || 0));
   const mobMdef = Math.max(0, Number(mob.mdef || 0));
-  const petAtk = Number(aptitude.atk || 0) + Number(equipStats.atk || 0) + Number(petTrainingBonus.atk || 0) + Number(petTrainingBonus.dex || 0);
-  const petMag = Number(aptitude.mag || 0) + Number(equipStats.mag || 0) + Number(equipStats.spirit || 0) + Number(petTrainingBonus.mag || 0);
-  const petHp = Number(aptitude.hp || 0) + Number(equipStats.hp || 0) + Number(petTrainingBonus.hp || 0);
-  const petDef = Number(aptitude.def || 0) + Number(equipStats.def || 0) + Number(petTrainingBonus.def || 0);
+  const petAtk = Number(battleStats.atk || 0);
+  const petMag = Number(battleStats.mag || 0);
+  const petHp = Number(battleStats.hp || 0);
+  const petDef = Number(battleStats.def || 0);
 
   let base = 0;
   const typeMods = {
@@ -14321,17 +15062,16 @@ function calcPetAssistDamageToPlayer(attacker, target) {
   const pet = getActivePet(attacker);
   if (!pet || !target || Number(target.hp || 0) <= 0) return null;
   const aptitude = pet.aptitude || {};
-  const equipStats = getPetEquipmentCombatStats(pet);
-  const petTrainingBonus = getPetTrainingBonus(pet);
+  const battleStats = getPetBattleStatInputs(pet);
   const growth = Math.max(0.8, Number(pet.growth || 1));
   const level = Math.max(1, Math.floor(Number(pet.level || 1)));
   const battleType = normalizePetBattleType(pet, aptitude);
   const targetDef = Math.max(0, Number(target.def || 0));
   const targetMdef = Math.max(0, Number(target.mdef || 0));
-  const petAtk = Number(aptitude.atk || 0) + Number(equipStats.atk || 0) + Number(petTrainingBonus.atk || 0) + Number(petTrainingBonus.dex || 0);
-  const petMag = Number(aptitude.mag || 0) + Number(equipStats.mag || 0) + Number(equipStats.spirit || 0) + Number(petTrainingBonus.mag || 0);
-  const petHp = Number(aptitude.hp || 0) + Number(equipStats.hp || 0) + Number(petTrainingBonus.hp || 0);
-  const petDef = Number(aptitude.def || 0) + Number(equipStats.def || 0) + Number(petTrainingBonus.def || 0);
+  const petAtk = Number(battleStats.atk || 0);
+  const petMag = Number(battleStats.mag || 0);
+  const petHp = Number(battleStats.hp || 0);
+  const petDef = Number(battleStats.def || 0);
 
   let base = 0;
   const typeMods = {
@@ -14695,12 +15435,14 @@ function resolvePetEquipSlotForItem(pet, itemTpl) {
 function calcPetPower(pet) {
   if (!pet) return 0;
   const aptitude = pet.aptitude || {};
+  const equipStats = getPetEquipmentCombatStats(pet);
+  const trainingBonus = getPetTrainingBonus(pet);
   const level = Math.max(1, Math.floor(Number(pet.level || 1)));
   const base =
-    Number(aptitude.hp || 0) * PET_POWER_WEIGHTS.hp +
-    Number(aptitude.atk || 0) * PET_POWER_WEIGHTS.atk +
-    Number(aptitude.def || 0) * PET_POWER_WEIGHTS.def +
-    Number(aptitude.mag || 0) * PET_POWER_WEIGHTS.mag +
+    (Number(aptitude.hp || 0) + Number(equipStats.hp || 0) + Number(trainingBonus.hp || 0)) * PET_POWER_WEIGHTS.hp +
+    (Number(aptitude.atk || 0) + Number(equipStats.atk || 0) + Number(equipStats.dex || 0) + Number(trainingBonus.atk || 0) + Number(trainingBonus.dex || 0)) * PET_POWER_WEIGHTS.atk +
+    (Number(aptitude.def || 0) + Number(equipStats.def || 0) + Number(trainingBonus.def || 0) + Number(equipStats.mdef || 0) + Number(trainingBonus.mdef || 0)) * PET_POWER_WEIGHTS.def +
+    (Number(aptitude.mag || 0) + Number(equipStats.mag || 0) + Number(equipStats.spirit || 0) + Number(trainingBonus.mag || 0)) * PET_POWER_WEIGHTS.mag +
     Number(aptitude.agility || 0) * PET_POWER_WEIGHTS.agility;
   const growth = Number(pet.growth || 1);
   const slots = Number(pet.skillSlots || PET_BASE_SKILL_SLOTS);
@@ -14739,23 +15481,50 @@ function getPetTrainingBonus(pet) {
   };
 }
 
+function getPetBattleStatInputs(pet) {
+  const aptitude = pet?.aptitude || {};
+  const equipStats = getPetEquipmentCombatStats(pet);
+  const trainingBonus = getPetTrainingBonus(pet);
+  const atk = Number(aptitude.atk || 0)
+    + Number(equipStats.atk || 0)
+    + Number(equipStats.dex || 0)
+    + Number(trainingBonus.atk || 0)
+    + Number(trainingBonus.dex || 0);
+  const mag = Number(aptitude.mag || 0)
+    + Number(equipStats.mag || 0)
+    + Number(equipStats.spirit || 0)
+    + Number(trainingBonus.mag || 0);
+  const hp = Number(aptitude.hp || 0)
+    + Number(equipStats.hp || 0)
+    + Number(trainingBonus.hp || 0);
+  const def = Number(aptitude.def || 0)
+    + Number(equipStats.def || 0)
+    + Number(trainingBonus.def || 0);
+  const mdef = Number(equipStats.mdef || 0) + Number(trainingBonus.mdef || 0);
+  const mp = Number(equipStats.mag || 0)
+    + Number(equipStats.spirit || 0)
+    + Number(trainingBonus.mag || 0)
+    + Number(trainingBonus.mp || 0);
+  return { hp, mp, atk, def, mag, mdef };
+}
+
 function calcPetBattlePanelDerivedStats(pet) {
   if (!pet) return { maxHp: 1, maxMp: 1, atk: 1, def: 0, mdef: 0 };
   const apt = pet.aptitude || {};
   const level = Math.max(1, Number(pet.level || 1));
   const growth = Math.max(0.8, Number(pet.growth || 1));
-  const trainingBonus = getPetTrainingBonus(pet);
+  const battleStats = getPetBattleStatInputs(pet);
   const battleType = String(pet.battleType || normalizePetBattleType(pet, apt));
   const typeMul = battleType === 'magic'
     ? { hp: 0.95, mp: 1.2, atk: 0.8, def: 0.95, mdef: 1.15 }
     : battleType === 'tank'
       ? { hp: 1.2, mp: 0.8, atk: 0.8, def: 1.2, mdef: 1.0 }
       : { hp: 1.0, mp: 0.9, atk: 1.2, def: 1.0, mdef: 0.9 };
-  const maxHp = Math.max(1, Math.floor((((Number(apt.hp || 0) + Number(trainingBonus.hp || 0)) * 3.8) + ((Number(apt.def || 0) + Number(trainingBonus.def || 0)) * 1.2) + level * 38) * growth * typeMul.hp));
-  const maxMp = Math.max(1, Math.floor((((Number(apt.mag || 0) + Number(trainingBonus.mag || 0)) * 2.8) + level * 22) * Math.max(0.9, growth) * typeMul.mp + Number(trainingBonus.mp || 0)));
-  const atk = Math.max(1, Math.floor((((Number(apt.atk || 0) + Number(trainingBonus.atk || 0) + Number(trainingBonus.dex || 0)) * 1.35) + level * 5) * growth * typeMul.atk));
-  const def = Math.max(0, Math.floor((((Number(apt.def || 0) + Number(trainingBonus.def || 0)) * 1.2) + level * 4) * growth * typeMul.def));
-  const mdef = Math.max(0, Math.floor(((((Number(apt.mag || 0) + Number(trainingBonus.mag || 0)) * 0.75) + ((Number(apt.def || 0) + Number(trainingBonus.def || 0)) * 0.65)) + level * 4) * growth * typeMul.mdef + Number(trainingBonus.mdef || 0)));
+  const maxHp = Math.max(1, Math.floor(((Number(battleStats.hp || 0) * 3.8) + (Number(battleStats.def || 0) * 1.2) + level * 38) * growth * typeMul.hp));
+  const maxMp = Math.max(1, Math.floor(((Number(battleStats.mag || 0) * 2.8) + level * 22) * Math.max(0.9, growth) * typeMul.mp + Number(battleStats.mp || 0)));
+  const atk = Math.max(1, Math.floor(((Number(battleStats.atk || 0) * 1.35) + level * 5) * growth * typeMul.atk));
+  const def = Math.max(0, Math.floor(((Number(battleStats.def || 0) * 1.2) + level * 4) * growth * typeMul.def));
+  const mdef = Math.max(0, Math.floor((((Number(battleStats.mag || 0) * 0.75) + (Number(battleStats.def || 0) * 0.65)) + level * 4) * growth * typeMul.mdef + Number(battleStats.mdef || 0)));
   return { maxHp, maxMp, atk, def, mdef };
 }
 
@@ -15643,26 +16412,6 @@ async function buildState(player, options = {}) {
 
   tMarks.p4_extra = Date.now() - t4Start;
 
-  const elapsed = Date.now() - t0;
-  if (elapsed > 50) {
-    console.log(
-      `[perf] buildState ${elapsed}ms ` +
-      `p1_base=${tMarks.p1_base}ms ` +
-      `p2_room=${tMarks.p2_room}ms ` +
-      `p3_bag=${tMarks.p3_bag}ms ` +
-      `p4_extra=${tMarks.p4_extra}ms ` +
-      `| extra_party=${t4Marks.party ?? 0}ms ` +
-      `extra_activity=${t4Marks.activity ?? 0}ms ` +
-      `extra_zhuxian=${t4Marks.zhuxian ?? 0}ms ` +
-      `extra_treasure=${t4Marks.treasure ?? 0}ms ` +
-      `extra_vip=${t4Marks.vip ?? 0}ms ` +
-      `extra_settings=${t4Marks.settings ?? 0}ms ` +
-      `extra_guild=${t4Marks.guild ?? 0}ms ` +
-      `extra_bonus=${t4Marks.bonus ?? 0}ms ` +
-      `${player?.name || 'unknown'}`
-    );
-  }
-
   return {
     player: {
       name: player.name,
@@ -15703,9 +16452,9 @@ async function buildState(player, options = {}) {
       svip_expires_at: player.flags?.svipExpiresAt || null,
       dodge: Math.round((player.evadeChance || 0) * 100),
       cultivation_level: Math.floor(Number(player.flags?.cultivationLevel ?? -1)),
-      cultivation_bonus: Math.floor(Number(player.flags?.cultivationLevel ?? -1)) >= 0
-        ? (Math.floor(Number(player.flags?.cultivationLevel ?? -1)) + 1) * 100
-        : 0,
+      cultivation_bonus: getCultivationInfo(player.flags?.cultivationLevel).bonus,
+      cultivation_name: getCultivationInfo(player.flags?.cultivationLevel).name,
+      cultivation_is_max: getCultivationInfo(player.flags?.cultivationLevel).idx >= (CULTIVATION_RANKS.length - 1),
       autoSkillId: player.flags?.autoSkillId || null,
       autoFullEnabled: Boolean(player.flags?.autoFullEnabled),
       autoFullTrialAvailable: Boolean(autoFullTrialInfo.available),
@@ -15749,6 +16498,7 @@ async function buildState(player, options = {}) {
     online: { count: onlineCount },
     ...(dailyLuckyInfo ? { daily_lucky: dailyLuckyInfo } : {}),
     activities: getActivityStatePayload(player),
+    equipment_codex: buildEquipmentCodexPayload(player),
     zhuxian_tower: {
       highestClearedFloor: Math.max(0, Math.floor(Number(zhuxianTowerProgress.highestClearedFloor || 0))),
       currentChallengeFloor: Math.max(1, Math.floor(Number(zhuxianTowerProgress.highestClearedFloor || 0)) + 1),
@@ -16005,10 +16755,6 @@ async function sendState(player) {
     }
   }
   CURRENT_PHASE = 'state_emit';
-  const elapsed = Date.now() - t0;
-  if (elapsed > 50) {
-    console.log(`[perf] sendState ${elapsed}ms build=${tBuildElapsed}ms hash=${tHashElapsed}ms ${player?.name || 'unknown'}`);
-  }
 }
 
 function buildRoomStatePayload(zoneId, roomId, realmId = 1) {
@@ -17160,13 +17906,6 @@ io.on('connection', (socket) => {
       socket.disconnect();
       return;
     }
-    const existingDeviceSocketId = deviceOnlineMap.get(deviceKey);
-    if (existingDeviceSocketId && existingDeviceSocketId !== socket.id) {
-      socket.emit('auth_error', { error: '该设备已在线。' });
-      socket.disconnect();
-      return;
-    }
-
     let realmInfo = await resolveRealmId(rawRealmId);
     // 如果请求的区服不存在（合区后可能发生），使用第一个可用的区服
     if (realmInfo.error) {
@@ -18899,6 +19638,27 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('daily_bounty_claim', async (payload) => {
+    const player = players.get(socket.id);
+    if (!player) return;
+    const { clean } = sanitizePayload(payload, ['taskId'], 'daily_bounty_claim');
+    const taskId = String(clean?.taskId || '').trim().toLowerCase() || 'all';
+    const result = await claimDailyBountyByMail(player, taskId, {
+      sendMail,
+      realmId: player.realmId || 1
+    });
+    player.forceStateRefresh = true;
+    await sendState(player);
+    await savePlayer(player, { immediate: true });
+    socket.emit('daily_bounty_result', {
+      ok: Boolean(result.ok),
+      msg: result.ok
+        ? `每日悬赏奖励已发送到邮件：活动积分 +${Math.max(0, Math.floor(Number(result.points || 0)))}，金币 ${Math.max(0, Math.floor(Number(result.gold || 0)))}。`
+        : (result.error || '每日悬赏领取失败。'),
+      taskIds: result.taskIds || []
+    });
+  });
+
   socket.on('specialization_set', async (payload) => {
     const player = players.get(socket.id);
     if (!player) return;
@@ -19950,6 +20710,9 @@ async function processMobDeath(player, mob, online) {
     partyMembersForReward = [lootOwner];
     partyMembersForLoot = [lootOwner];
   }
+  if (isBoss) {
+    partyMembersForReward.forEach((member) => recordDailyBountyProgress(member, 'bossKills', 1));
+  }
   const eligibleCount = hasParty ? 1 : partyMembersForReward.length;
   const bonus = totalPartyCount > 1 ? Math.min(0.2 * totalPartyCount, 1.0) : 0;
   const totalExp = Math.floor(exp * (1 + bonus));
@@ -20548,17 +21311,7 @@ function shouldProcessManagedPlayerThisTick(player, shardIndex, shardCount = COM
 let CURRENT_PHASE = 'idle';
 
 async function combatTick() {
-  const tickStart = Date.now();
   CURRENT_PHASE = 'combatTick_start';
-  
-  const perfLog = (label, startTime, extra = {}) => {
-    const elapsed = Date.now() - startTime;
-    if (elapsed > 50) {
-      console.log(`[perf] ${label} ${elapsed}ms`, extra.phase ? `[phase:${extra.phase}]` : '', extra.managed ? `[managed:${extra.managed}]` : '');
-    }
-  };
-  
-
 
   const markStateDirty = (player) => {
     if (!player) return;
@@ -20584,15 +21337,11 @@ async function combatTick() {
   // 特殊BOSS人数缩放改为低频执行，避免每秒全图扫描
   if (tickNow - combatLastBossScaleAt >= bossScaleIntervalMs) {
     CURRENT_PHASE = 'boss_scale';
-    const t0 = Date.now();
     updateSpecialBossStatsBasedOnPlayers();
-    perfLog('updateSpecialBossStatsBasedOnPlayers', t0);
     combatLastBossScaleAt = tickNow;
   }
 
   CURRENT_PHASE = 'player_loop';
-  const managedTickStats = { total: 0, count: 0 };
-  const normalTickStats = { total: 0, count: 0 };
   
   for (const player of online) {
     const now = Date.now();
@@ -20600,7 +21349,6 @@ async function combatTick() {
     if (isManagedPlayer && !shouldProcessManagedPlayerThisTick(player, managedShardIndex, managedShardCount)) {
       continue;
     }
-    const tickPlayerStart = Date.now();
     if (!player?.socket && player?.flags?.offlineManagedPending) {
       const startAt = Number(player.flags.offlineManagedStartAt || 0);
       if (!isSvipActive(player)) {
@@ -20692,9 +21440,7 @@ async function combatTick() {
       }
 
     if (player.flags?.autoFullEnabled) {
-      const tAutoFull0 = Date.now();
       const bossMove = tryAutoFullBossMove(player);
-      perfLog('tryAutoFullBossMove', tAutoFull0);
       if (bossMove === 'moved') {
         player.combat = null;
         continue;
@@ -20723,9 +21469,7 @@ async function combatTick() {
         }
       }
       if (!player.combat && player.flags?.autoFullEnabled) {
-        const tAutoFull1 = Date.now();
         const autoFullResult = tryAutoFullAction(player, roomMobs);
-        perfLog('tryAutoFullAction', tAutoFull1);
         if (autoFullResult === 'moved') {
           continue;
         }
@@ -21964,37 +22708,12 @@ async function combatTick() {
     if (now - lastSave >= 30000) {
       // 检查是否有脏标记需要保存
       if (hasPlayerDirty(player)) {
-        const tSave = Date.now();
-        savePlayer(player, { dirtyFirst: true }).then(() => {
-          const elapsed = Date.now() - tSave;
-          if (elapsed > 50) {
-            console.log(`[perf] savePlayer ${elapsed}ms ${player?.name || 'unknown'}`);
-          }
-        }).catch(() => {});
+        savePlayer(player, { dirtyFirst: true }).catch(() => {});
       }
       getRealmState(player.realmId || 1).lastSaveTime.set(player.name, now);
     }
-    
-    // 统计玩家处理耗时
-    const playerElapsed = Date.now() - tickPlayerStart;
-    if (isManagedPlayer) {
-      managedTickStats.total += playerElapsed;
-      managedTickStats.count++;
-    } else {
-      normalTickStats.total += playerElapsed;
-      normalTickStats.count++;
-    }
   }
 
-  // 打印托管玩家统计
-  if (managedTickStats.count > 0 && managedTickStats.total > 50) {
-    console.log(`[perf][managed] combatTick_player ${managedTickStats.total}ms count=${managedTickStats.count} avg=${Math.round(managedTickStats.total/managedTickStats.count)}ms`);
-  }
-  
-  const tickTotalElapsed = Date.now() - tickStart;
-  if (tickTotalElapsed > 100) {
-    console.log(`[perf][lag] combatTick_total ${tickTotalElapsed}ms [phase:${CURRENT_PHASE}] managed=${managedTickStats.count} normal=${normalTickStats.count}`);
-  }
   CURRENT_PHASE = 'idle';
 }
 
@@ -22002,34 +22721,21 @@ setInterval(combatTick, 1000);
 
 // 高频状态刷新tick，每3秒检查一次需要刷新的玩家状态
 async function stateFlushTick() {
-  const tickStart = Date.now();
   const online = listOnlinePlayers();
-  let sendCount = 0;
-  let skipManaged = 0;
-  let skipNoRefresh = 0;
   
   for (const player of online) {
     // 托管玩家没有真实socket，不做UI state生成
     if (isManagedHostedPlayer(player)) {
-      skipManaged++;
       continue;
     }
     // 只处理有socket连接且标记了强制刷新的玩家
     if (player.socket && player.forceStateRefresh) {
       await sendState(player).catch(() => {});
-      sendCount++;
-    } else {
-      skipNoRefresh++;
     }
-  }
-  
-  const elapsed = Date.now() - tickStart;
-  if (elapsed > 50) {
-    console.log(`[perf] stateFlushTick ${elapsed}ms send=${sendCount} skipManaged=${skipManaged} skipNoRefresh=${skipNoRefresh}`);
   }
 }
 
-setInterval(stateFlushTick, 3000);
+setSafeInterval('state-flush', stateFlushTick, 3000);
 
 // 托管玩家定时重存，避免背包等重字段遗漏导致回档
 function managedForceSaveTick() {
@@ -22191,7 +22897,7 @@ async function start() {
   });
 
   // 活动排行榜结算（每日/每周）自动发奖（邮件）
-  setInterval(async () => {
+  setSafeInterval('activity-ranking-settlement', async () => {
     await runActivityRankingSettlements();
   }, 60 * 1000);
   await runActivityRankingSettlements();
@@ -22282,7 +22988,7 @@ async function start() {
     }
   }
   respawnPersistTimer = true; // 标记为运行中
-  void startRespawnPersistLoop();
+  void guardAsyncTask('respawn-persist-loop', startRespawnPersistLoop)();
 
   // 立即刷新函数（用于服务器关闭时）
   async function immediateFlushRespawnQueue() {
@@ -22396,70 +23102,62 @@ async function start() {
   }
   
   // 定期保存怪物血量状态（每60秒）
-  setInterval(async () => {
-    try {
-      // 检查缓存怪物血量开关
-      const cacheEnabled = await getCacheMonsterHealthEnabled();
-      if (!cacheEnabled) {
-        // 如果关闭缓存，清理已有的缓存记录
-        if (mobStatePersistCache.size > 0) {
-          for (const key of mobStatePersistCache.keys()) {
-            mobStatePersistCache.delete(key);
-          }
-        }
-        return;
-      }
-      const realmIds = getRealmIds();
-      const activeMobKeys = new Set();
-      for (const realmId of realmIds) {
-        const aliveMobs = getAllAliveMobs(realmId);
-        for (const mob of aliveMobs) {
-          const cacheKey = getMobPersistCacheKey(mob);
-          activeMobKeys.add(cacheKey);
-          if (!shouldPersistMobState(mob)) {
-            if (mobStatePersistCache.has(cacheKey)) {
-              await clearMobRespawn(realmId, mob.zoneId, mob.roomId, mob.slotIndex);
-              mobStatePersistCache.delete(cacheKey);
-            }
-            continue;
-          }
-          const nextSnapshot = getMobPersistSnapshot(mob);
-          if (mobStatePersistCache.get(cacheKey) === nextSnapshot) continue;
-          await saveMobState(
-            realmId,
-            mob.zoneId,
-            mob.roomId,
-            mob.slotIndex,
-            mob.templateId,
-            mob.currentHp,
-            mob.status
-          );
-          mobStatePersistCache.set(cacheKey, nextSnapshot);
-        }
-      }
-      for (const key of mobStatePersistCache.keys()) {
-        if (!activeMobKeys.has(key)) {
+  setSafeInterval('mob-state-persist', async () => {
+    // 检查缓存怪物血量开关
+    const cacheEnabled = await getCacheMonsterHealthEnabled();
+    if (!cacheEnabled) {
+      // 如果关闭缓存，清理已有的缓存记录
+      if (mobStatePersistCache.size > 0) {
+        for (const key of mobStatePersistCache.keys()) {
           mobStatePersistCache.delete(key);
         }
       }
-    } catch (err) {
-      console.warn('Failed to save mob states:', err);
+      return;
+    }
+    const realmIds = getRealmIds();
+    const activeMobKeys = new Set();
+    for (const realmId of realmIds) {
+      const aliveMobs = getAllAliveMobs(realmId);
+      for (const mob of aliveMobs) {
+        const cacheKey = getMobPersistCacheKey(mob);
+        activeMobKeys.add(cacheKey);
+        if (!shouldPersistMobState(mob)) {
+          if (mobStatePersistCache.has(cacheKey)) {
+            await clearMobRespawn(realmId, mob.zoneId, mob.roomId, mob.slotIndex);
+            mobStatePersistCache.delete(cacheKey);
+          }
+          continue;
+        }
+        const nextSnapshot = getMobPersistSnapshot(mob);
+        if (mobStatePersistCache.get(cacheKey) === nextSnapshot) continue;
+        await saveMobState(
+          realmId,
+          mob.zoneId,
+          mob.roomId,
+          mob.slotIndex,
+          mob.templateId,
+          mob.currentHp,
+          mob.status
+        );
+        mobStatePersistCache.set(cacheKey, nextSnapshot);
+      }
+    }
+    for (const key of mobStatePersistCache.keys()) {
+      if (!activeMobKeys.has(key)) {
+        mobStatePersistCache.delete(key);
+      }
     }
   }, 60000);
 
   // 定期分批清理 mob_respawns 中已过期且无血量快照的无效记录，避免大事务长时间锁表
-  setInterval(async () => {
-    try {
-      const deleted = await runMobRespawnCleanupSweep({
-        batchSize: MOB_RESPAWN_CLEANUP_BATCH_SIZE,
-        maxRounds: MOB_RESPAWN_CLEANUP_MAX_ROUNDS,
-        delayMs: 20
-      });
-      if (Number(deleted || 0) > 0) {
-        console.log(`[mob_respawns] cleaned expired rows: ${deleted}`);
-      }
-    } catch (err) {
-      console.warn('Failed to cleanup expired mob respawns:', err);
+  setSafeInterval('mob-respawn-cleanup', async () => {
+    const deleted = await runMobRespawnCleanupSweep({
+      batchSize: MOB_RESPAWN_CLEANUP_BATCH_SIZE,
+      maxRounds: MOB_RESPAWN_CLEANUP_MAX_ROUNDS,
+      delayMs: 20
+    });
+    if (Number(deleted || 0) > 0) {
+      console.log(`[mob_respawns] cleaned expired rows: ${deleted}`);
     }
   }, MOB_RESPAWN_CLEANUP_INTERVAL_MS);
   try {
@@ -22474,21 +23172,15 @@ async function start() {
   } catch (err) {
     console.warn('Failed to cleanup expired mob respawns on startup:', err);
   }
-  setTimeout(() => {
-    runStartupMobRespawnCleanup().catch((err) => {
-      console.warn('Failed to run startup background mob respawn cleanup:', err);
-    });
+  setSafeTimeout('startup-mob-respawn-cleanup', async () => {
+    await runStartupMobRespawnCleanup();
   }, 5000);
 
   // 寄售到期自动下架（每10分钟）
-  setInterval(async () => {
-    try {
-      const realmIds = getRealmIds();
-      for (const realmId of realmIds) {
-        await cleanupExpiredConsignments(realmId);
-      }
-    } catch (err) {
-      console.warn('Failed to cleanup expired consignments:', err);
+  setSafeInterval('expired-consignment-cleanup', async () => {
+    const realmIds = getRealmIds();
+    for (const realmId of realmIds) {
+      await cleanupExpiredConsignments(realmId);
     }
   }, CONSIGN_CLEANUP_INTERVAL_MS);
 
@@ -22785,17 +23477,21 @@ process.on('SIGTERM', () => {
 });
 
 process.on('uncaughtException', (err) => {
-  console.error(err);
+  logProcessFault('uncaughtException', err);
   void gracefulShutdown('uncaughtException', 1);
 });
 
 process.on('unhandledRejection', (err) => {
-  console.error(err);
-  void gracefulShutdown('unhandledRejection', 1);
+  logProcessFault('unhandledRejection', err);
+  if (EXIT_ON_UNHANDLED_REJECTION) {
+    void gracefulShutdown('unhandledRejection', 1);
+    return;
+  }
+  console.warn('[process] unhandledRejection captured; process kept alive. Set EXIT_ON_UNHANDLED_REJECTION=true to restore fail-fast behavior.');
 });
 
 start().catch((err) => {
-  console.error(err);
+  logProcessFault('start-failed', err);
   void gracefulShutdown('start-failed', 1);
 });
 

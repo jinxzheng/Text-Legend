@@ -1,4 +1,6 @@
-﻿export async function up(knex) {
+import { timestampDefault } from '../time.js';
+
+export async function up(knex) {
   const client = String(knex?.client?.config?.client || '').toLowerCase();
   const isMysql = client.includes('mysql');
 
@@ -24,8 +26,8 @@
       t.boolean('unconsignable').defaultTo(false);
       t.boolean('boss_only').defaultTo(false);
       t.boolean('world_boss_only').defaultTo(false);
-      t.timestamp('created_at').defaultTo(knex.fn.now());
-      t.timestamp('updated_at').defaultTo(knex.fn.now());
+      t.timestamp('created_at').defaultTo(timestampDefault(knex));
+      t.timestamp('updated_at').defaultTo(timestampDefault(knex));
     });
 
     await knex.schema.alterTable('items', (t) => {
@@ -42,8 +44,8 @@
       t.integer('item_id').unsigned().notNullable().references('items.id').onDelete('CASCADE');
       t.string('mob_id', 64).notNullable();
       t.decimal('drop_chance', 5, 4).notNullable().defaultTo(0.0);
-      t.timestamp('created_at').defaultTo(knex.fn.now());
-      t.timestamp('updated_at').defaultTo(knex.fn.now());
+      t.timestamp('created_at').defaultTo(timestampDefault(knex));
+      t.timestamp('updated_at').defaultTo(timestampDefault(knex));
       t.unique(['item_id', 'mob_id']);
     });
 
